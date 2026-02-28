@@ -1,0 +1,67 @@
+{
+  "kind": "build_request",
+  "title": "Block 40 — Wire ActivateSportScreen to SportContext with Map navigation on sport selection",
+  "projectName": "Sport Buddies",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "In frontend/src/pages/ActivateSportScreen.tsx, import the useSport hook from the SportContext and call activateSport(sportName) when the user taps a sport icon. After calling activateSport, navigate the user to the Map route (/map).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ],
+        "quotes": [
+          "import { useSport } from \"../context/SportContext\";",
+          "const { activateSport } = useSport();",
+          "const onPickSport = (sportName: string) => { activateSport(sportName); navigation.navigate(\"Map\"); };"
+        ]
+      },
+      "acceptanceCriteria": [
+        "ActivateSportScreen imports useSport from the SportContext file",
+        "The activateSport function from useSport is called with the selected sport name when a sport icon is tapped",
+        "After tapping any sport icon, the user is navigated to the Map screen/route",
+        "Sport icons for Soccer, Basketball, Tennis, Running, and Yoga each invoke onPickSport with their respective sport name",
+        "The component accepts a navigation prop (or equivalent router navigation) so the navigate call does not throw"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Ensure the SportContext (frontend/src/context/SportContext.tsx) is already created and the SportProvider wraps the application root in App.tsx, as established in Block 39. If the context file or provider wrapper is missing, create them with the exact implementation specified: SportStatus ('inactive'|'active'), UserMode ('Out Now'|'On My Way'|'Planned'), locationEnabled boolean, and the activateSport, deactivateSport, setUserMode, and toggleLocation functions.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ],
+        "quotes": [
+          "BLOCK 39 — CREATE Global Sport Context",
+          "type SportStatus = \"inactive\" | \"active\";",
+          "type UserMode = \"Out Now\" | \"On My Way\" | \"Planned\";"
+        ]
+      },
+      "acceptanceCriteria": [
+        "frontend/src/context/SportContext.tsx exists and exports SportProvider and useSport",
+        "SportProvider is present in App.tsx wrapping the router/navigation tree",
+        "useSport hook throws a descriptive error if used outside SportProvider",
+        "activateSport(sport) sets currentSport, sets sportStatus to 'active', and sets userMode to 'Out Now'",
+        "deactivateSport() resets currentSport to null, sportStatus to 'inactive', and userMode to 'Planned'"
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify any files listed in frontend.immutablePaths",
+    "Do not change any other screen or component beyond ActivateSportScreen.tsx and the SportContext/App root wiring",
+    "Navigation to Map must use the existing TanStack Router route path (/map), not React Navigation's navigate() since this is a web app"
+  ],
+  "nonGoals": [
+    "No UI visual changes to ActivateSportScreen beyond adding the onPickSport handler",
+    "No changes to MapPage, HomeScreen, or any other screen",
+    "No backend changes",
+    "No new screens or routes"
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

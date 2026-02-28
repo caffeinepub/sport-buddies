@@ -1,0 +1,52 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-26T17:41:52.628Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 2,
+    "implemented": 2,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "In frontend/src/pages/ActivateSportScreen.tsx, import the useSport hook from the SportContext and call activateSport(sportName) when the user taps a sport icon. After calling activateSport, navigate the user to the Map route (/map).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/ActivateSportScreen.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/ActivateSportScreen.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Ensure the SportContext (frontend/src/context/SportContext.tsx) is already created and the SportProvider wraps the application root in App.tsx, as established in Block 39. If the context file or provider wrapper is missing, create them with the exact implementation specified: SportStatus ('inactive'|'active'), UserMode ('Out Now'|'On My Way'|'Planned'), locationEnabled boolean, and the activateSport, deactivateSport, setUserMode, and toggleLocation functions.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/context/SportContext.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/context/SportContext.tsx",
+          "frontend/src/App.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
+    "frontend/src/context/SportContext.tsx",
+    "frontend/src/pages/ActivateSportScreen.tsx",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

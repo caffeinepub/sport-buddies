@@ -1,0 +1,48 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Block 40 — Wire ActivateSportScreen to SportContext with Map navigation on sport selection",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Wire ActivateSportScreen to SportContext and navigate to Map on sport selection",
+      "acceptanceCriteria": [
+        "ActivateSportScreen imports useSport from the SportContext file",
+        "The activateSport function from useSport is called with the selected sport name when a sport icon is tapped",
+        "After tapping any sport icon, the user is navigated to the Map screen/route",
+        "Sport icons for Soccer, Basketball, Tennis, Running, and Yoga each invoke onPickSport with their respective sport name",
+        "The component accepts a navigation prop (or equivalent router navigation) so the navigate call does not throw"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/ActivateSportScreen.tsx",
+          "operation": "modify",
+          "description": "Import useSport hook from SportContext. Extract activateSport from the hook. Replace or augment the existing sport icon tap handler to call activateSport(sportName) and then use TanStack Router's useNavigate hook to navigate to '/map'. Ensure each sport icon (Soccer, Basketball, Tennis, Running, Yoga) invokes this handler with the correct sport name string."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Ensure SportContext exists and SportProvider wraps the application root",
+      "acceptanceCriteria": [
+        "frontend/src/context/SportContext.tsx exists and exports SportProvider and useSport",
+        "SportProvider is present in App.tsx wrapping the router/navigation tree",
+        "useSport hook throws a descriptive error if used outside SportProvider",
+        "activateSport(sport) sets currentSport, sets sportStatus to 'active', and sets userMode to 'Out Now'",
+        "deactivateSport() resets currentSport to null, sportStatus to 'inactive', and userMode to 'Planned'"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/context/SportContext.tsx",
+          "operation": "create",
+          "description": "Create the SportContext file defining SportStatus type as 'inactive' | 'active', UserMode type as 'Out Now' | 'On My Way' | 'Planned', and SportContextValue interface with currentSport (string | null), sportStatus, userMode, locationEnabled (boolean), and functions activateSport(sport: string), deactivateSport(), setUserMode(mode: UserMode), and toggleLocation(). Export SportProvider component managing this state and useSport hook that throws an error if used outside the provider. Implement activateSport to set currentSport to the given sport, sportStatus to 'active', and userMode to 'Out Now'. Implement deactivateSport to reset currentSport to null, sportStatus to 'inactive', and userMode to 'Planned'."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Import SportProvider from the SportContext file. Wrap the existing RouterProvider (or the outermost router/navigation tree below QueryClientProvider) with SportProvider to make the context available throughout the application."
+        }
+      ]
+    }
+  ]
+}

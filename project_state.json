@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Sport Buddies mobile app (React Native) — a sports activity finder with tab navigation. Features include: HomeScreen with navigation buttons, ActivateSportScreen with sport icon selection, MapScreen, and global SportContext managing sport activation state, user mode (Out Now/On My Way/Planned), and location toggle.",
+  "architectural_notes": [
+    "SportProvider wraps NavigationContainer in App.tsx for global sport state",
+    "SportContext tracks: sportStatus (inactive/active), currentSport, userMode (Out Now/On My Way/Planned), locationEnabled",
+    "HomeScreen contains nav buttons only (Activate My Sport, Enter Map, Helicopter, Marketplace) — no floating sport icons",
+    "Floating sport icon grid belongs exclusively to ActivateSportScreen",
+    "Tab navigator hard-locked: Home tab -> HomeScreen, initialRouteName='Home'"
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-in-frontend-src-pages-activatesportscreen-tsx-import-the-usesport-hook-from-the-sportcontext-and-call-activatesport-sportname-when-the-user-taps-a-sport-icon-after-calling-activatesport-navigate-the-user-to-the-map-route-map",
+      "title": "In frontend/src/pages/ActivateSportScreen.tsx, import the useSport hook from the SportContext and call activateSport(sportName) when the user taps a sport icon. After calling activateSport, navigate the user to the Map route (/map).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-sportcontext-frontend-src-context-sportcontext-tsx-is-already-created-and-the-sportprovider-wraps-the-application-root-in-app-tsx-as-established-in-block-39-if-the-context-file-or-provider-wrapper-is-missing-create-them-with-the-exact-implementation-specified-sportstatus-inactive-active-usermode-out-now-on-my-way-planned-locationenabled-boolean-and-the-activatesport-deactivatesport-setusermode-and-togglelocation-functions",
+      "title": "Ensure the SportContext (frontend/src/context/SportContext.tsx) is already created and the SportProvider wraps the application root in App.tsx, as established in Block 39. If the context file or provider wrapper is missing, create them with the exact implementation specified: SportStatus ('inactive'|'active'), UserMode ('Out Now'|'On My Way'|'Planned'), locationEnabled boolean, and the activateSport, deactivateSport, setUserMode, and toggleLocation functions.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Global SportContext with sportStatus, currentSport, userMode, locationEnabled state",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "ActivateSportScreen wired to SportContext — tapping a sport calls activateSport() and navigates to Map",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Sport Buddies",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}
