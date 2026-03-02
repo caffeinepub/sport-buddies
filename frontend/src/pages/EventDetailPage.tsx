@@ -1,20 +1,29 @@
-import { useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowLeft, Calendar, MapPin, Users, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { useEventJoinState } from '../hooks/useEventJoinState';
-import { MOCK_EVENTS } from './EventsPage';
-
-// The mock "current user" ID for host detection
-const CURRENT_USER_ID = 'current-user-123';
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { ArrowLeft, Calendar, MapPin, Users, User, QrCode, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { useSport } from "../context/SportContext";
 
 export default function EventDetailPage() {
   const navigate = useNavigate();
-  const { id } = useParams({ strict: false });
-  const { isJoined, getParticipantCount, joinEvent, leaveEvent } = useEventJoinState();
+  // Support both param names for backward compat
+  const params = useParams({ strict: false }) as { eventId?: string; id?: string };
+  const eventId = params.eventId || params.id;
 
-  const event = MOCK_EVENTS.find((e) => e.id === id);
+  const {
+    events,
+    currentUser,
+    joinEvent,
+    leaveEvent,
+    completeEvent,
+    cancelEvent,
+    hasAttended,
+    markAttended,
+  } = useSport();
+
+  const event = events.find((e) => e.id === eventId);
 
   if (!event) {
     return (
@@ -24,7 +33,7 @@ export default function EventDetailPage() {
           The event you're looking for doesn't exist or has been removed.
         </p>
         <Button
-          onClick={() => navigate({ to: '/events' })}
+          onClick={() => navigate({ to: "/events" })}
           className="bg-gold hover:bg-gold-dark text-black font-semibold"
         >
           Back to Events
@@ -33,46 +42,64 @@ export default function EventDetailPage() {
     );
   }
 
-  const joined = isJoined(event.id);
-  const participantCount = getParticipantCount(event.id, event.baseParticipants);
-  const isHost = event.hostId === CURRENT_USER_ID;
+  const isJoined = event.participants.some((p) => p.id === currentUser.id);
+  const isHost = currentUser.id === event.hostId;
+  const attended = hasAttended(event.id);
+  const isFull = event.participants.length >= event.capacity;
 
   const handleJoin = () => {
-    joinEvent(event.id, participantCount);
+    if (isFull) {
+      toast.error("This event is full.");
+      return;
+    }
+    joinEvent(event.id);
+    toast.success("You joined the event!");
   };
 
   const handleLeave = () => {
-    leaveEvent(event.id, participantCount);
+    leaveEvent(event.id);
+    toast.info("You left the event.");
   };
 
   const handleComplete = () => {
-    toast.info('Coming soon (MVP).');
+    completeEvent(event.id);
+    toast.success("Event marked as completed.");
   };
 
   const handleCancel = () => {
-    toast.info('Coming soon (MVP).');
+    cancelEvent(event.id);
+    toast.warning("Event has been canceled.");
   };
 
-  // Build display participants list
-  const displayParticipants = [...event.participants];
-  if (joined && !displayParticipants.includes('You')) {
-    displayParticipants.push('You');
-  }
+  const handleMarkAttended = () => {
+    if (attended) return;
+    markAttended(event.id);
+    toast.success("+5 coins awarded for attendance! 🪙");
+  };
+
+  // Status chip styling
+  const statusConfig = {
+    active: { label: "Active", className: "bg-green-900/40 text-green-400 border-green-500/30" },
+    completed: { label: "Completed", className: "bg-blue-900/40 text-blue-400 border-blue-500/30" },
+    canceled: { label: "Canceled", className: "bg-red-900/40 text-red-400 border-red-500/30" },
+  };
+  const statusInfo = statusConfig[event.status];
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4 pb-8">
       {/* Back Button */}
       <button
-        onClick={() => navigate({ to: '/events' })}
+        onClick={() => navigate({ to: "/events" })}
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-5 transition-colors"
       >
         <ArrowLeft className="w-5 h-5" />
         <span>Back to Events</span>
       </button>
 
-      {/* Event Header Card */}
+      {/* ── HEADER BLOCK ── */}
       <div className="bg-charcoal border border-white/10 rounded-xl p-5 mb-4">
-        <div className="flex items-start justify-between mb-3">
+        {/* Title + Host badge */}
+        <div className="flex items-start justify-between mb-2">
           <h1 className="text-2xl font-bold text-foreground leading-tight flex-1 mr-3">
             {event.title}
           </h1>
@@ -83,67 +110,85 @@ export default function EventDetailPage() {
           )}
         </div>
 
-        <div className="inline-block px-2.5 py-0.5 text-xs font-semibold bg-gold/20 text-gold rounded mb-3">
+        {/* Sport badge */}
+        <span className="inline-block px-2.5 py-0.5 text-xs font-semibold bg-gold/20 text-gold rounded mb-3">
           {event.sport}
-        </div>
+        </span>
 
-        <div className="space-y-2 text-sm text-muted-foreground">
+        {/* Meta info */}
+        <div className="space-y-2 text-sm text-muted-foreground mb-3">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gold/60 flex-shrink-0" />
-            <span>{event.date} at {event.time}</span>
+            <span>{event.datetimeLabel}</span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-gold/60 flex-shrink-0" />
-            <span>{event.location}</span>
+            <span>{event.locationLabel}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-gold/60 flex-shrink-0" />
-            <span>{participantCount}/{event.maxParticipants} joined</span>
+            <User className="w-4 h-4 text-gold/60 flex-shrink-0" />
+            <span>Host: {event.hostName}</span>
           </div>
         </div>
+
+        {/* Status chip */}
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusInfo.className}`}
+        >
+          {statusInfo.label}
+        </span>
       </div>
 
-      {/* Description */}
+      {/* ── PARTICIPANTS SECTION ── */}
       <div className="bg-charcoal border border-white/10 rounded-xl p-5 mb-4">
-        <h2 className="text-base font-semibold text-foreground mb-2">About this Event</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed">{event.description}</p>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-gold" />
+            <h2 className="text-base font-semibold text-foreground">Participants</h2>
+          </div>
+          <span className="text-sm text-muted-foreground font-medium">
+            {event.participants.length}/{event.capacity}
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          {event.participants.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">No participants yet.</p>
+          ) : (
+            event.participants.map((p) => (
+              <div
+                key={p.id}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
+                  p.id === currentUser.id
+                    ? "bg-gold/10 text-gold border border-gold/20"
+                    : "bg-white/5 text-muted-foreground"
+                }`}
+              >
+                <User className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{p.name}</span>
+                {p.id === currentUser.id && (
+                  <span className="ml-auto text-xs text-gold/70">(you)</span>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      {/* Participants */}
-      <div className="bg-charcoal border border-white/10 rounded-xl p-5 mb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Users className="w-4 h-4 text-gold" />
-          <h2 className="text-base font-semibold text-foreground">
-            Participants ({displayParticipants.length})
-          </h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {displayParticipants.map((name, idx) => (
-            <div
-              key={idx}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                name === 'You'
-                  ? 'bg-gold/20 text-gold border border-gold/30'
-                  : 'bg-white/5 text-muted-foreground border border-white/10'
-              }`}
-            >
-              <User className="w-3 h-3" />
-              {name}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Join / Leave Button */}
+      {/* ── JOIN / LEAVE BUTTONS ── */}
       <div className="mb-4">
-        {!joined ? (
-          <Button
-            onClick={handleJoin}
-            className="w-full bg-gold hover:bg-gold-dark text-black font-bold text-base py-5"
-          >
-            Join Event
-          </Button>
-        ) : (
+        {event.status !== "active" ? (
+          <div className="bg-charcoal border border-white/10 rounded-xl p-4 text-center">
+            <p className="text-muted-foreground text-sm">
+              Event is{" "}
+              <span className={`font-semibold ${
+                event.status === "completed" ? "text-blue-400" : "text-red-400"
+              }`}>
+                {event.status}
+              </span>
+              . No further actions available.
+            </p>
+          </div>
+        ) : isJoined ? (
           <Button
             onClick={handleLeave}
             variant="outline"
@@ -151,17 +196,26 @@ export default function EventDetailPage() {
           >
             Leave Event
           </Button>
+        ) : (
+          <Button
+            onClick={handleJoin}
+            disabled={isFull}
+            className="w-full bg-gold hover:bg-gold-dark text-black font-bold text-base py-5 disabled:opacity-50"
+          >
+            {isFull ? "Event Full" : "Join Event"}
+          </Button>
         )}
       </div>
 
-      {/* Host-only Actions */}
-      {isHost && (
-        <div className="bg-charcoal border border-white/10 rounded-xl p-5">
-          <h3 className="text-base font-semibold text-foreground mb-3">Host Actions</h3>
+      {/* ── HOST-ONLY BUTTONS ── */}
+      {isHost && event.status === "active" && (
+        <div className="bg-charcoal border border-white/10 rounded-xl p-5 mb-4">
+          <h3 className="text-base font-semibold text-foreground mb-3">Host Controls</h3>
           <div className="flex gap-3">
             <Button
               onClick={handleComplete}
               className="flex-1 bg-green-700 hover:bg-green-600 text-white font-semibold"
+              size="sm"
             >
               Complete
             </Button>
@@ -169,15 +223,52 @@ export default function EventDetailPage() {
               onClick={handleCancel}
               variant="destructive"
               className="flex-1 font-semibold"
+              size="sm"
             >
               Cancel
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            Host-only controls — full functionality coming soon
-          </p>
         </div>
       )}
+
+      {/* ── ATTENDANCE VALIDATION ── */}
+      <Card className="bg-charcoal border-white/10 mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base text-foreground flex items-center gap-2">
+            <QrCode className="w-4 h-4 text-gold" />
+            Attendance Validation
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <span className="text-gold/60">📷</span>
+            QR validation coming soon
+          </p>
+          {attended ? (
+            <Button
+              disabled
+              className="w-full bg-green-900/40 text-green-400 border border-green-500/30 font-semibold cursor-not-allowed opacity-80"
+              variant="outline"
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Attended ✅
+            </Button>
+          ) : (
+            <Button
+              onClick={handleMarkAttended}
+              className="w-full bg-gold hover:bg-gold-dark text-black font-semibold"
+            >
+              Mark Attended (MVP) &nbsp;+5 coins
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── RULES SECTION ── */}
+      <div className="px-1 pb-2 space-y-1">
+        <p className="text-xs text-muted-foreground/60">• No private chat.</p>
+        <p className="text-xs text-muted-foreground/60">• Public Billboard later, not now.</p>
+      </div>
     </div>
   );
 }

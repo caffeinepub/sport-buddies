@@ -96,7 +96,7 @@ const eventsRoute = createRoute({
 
 const eventDetailRoute = createRoute({
   getParentRoute: () => layoutWithNavRoute,
-  path: "/events/$id",
+  path: "/events/$eventId",
   component: EventDetailPage,
 });
 

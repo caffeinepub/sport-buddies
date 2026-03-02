@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-frontend-src-pages-activatesportscreen-tsx-import-the-usesport-hook-from-the-sportcontext-and-call-activatesport-sportname-when-the-user-taps-a-sport-icon-after-calling-activatesport-navigate-the-user-to-the-map-route-map",
-      "featureTitle": "In frontend/src/pages/ActivateSportScreen.tsx, import the useSport hook from the SportContext and call activateSport(sportName) when the user taps a sport icon. After calling activateSport, navigate the user to the Map route (/map).",
+      "featureId": "feature-in-eventspage-tsx-import-useeffect-and-usestate-from-react-and-import-usesport-from-the-sportcontext-consume-sportstatus-and-currentsport-from-usesport",
+      "featureTitle": "In EventsPage.tsx, import useEffect and useState from React, and import useSport from the SportContext. Consume sportStatus and currentSport from useSport().",
       "files": [
-        "frontend/src/pages/ActivateSportScreen.tsx"
+        "frontend/src/pages/EventsPage.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -23,11 +23,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-the-sportcontext-frontend-src-context-sportcontext-tsx-is-already-created-and-the-sportprovider-wraps-the-application-root-in-app-tsx-as-established-in-block-39-if-the-context-file-or-provider-wrapper-is-missing-create-them-with-the-exact-implementation-specified-sportstatus-inactive-active-usermode-out-now-on-my-way-planned-locationenabled-boolean-and-the-activatesport-deactivatesport-setusermode-and-togglelocation-functions",
-      "featureTitle": "Ensure the SportContext (frontend/src/context/SportContext.tsx) is already created and the SportProvider wraps the application root in App.tsx, as established in Block 39. If the context file or provider wrapper is missing, create them with the exact implementation specified: SportStatus ('inactive'|'active'), UserMode ('Out Now'|'On My Way'|'Planned'), locationEnabled boolean, and the activateSport, deactivateSport, setUserMode, and toggleLocation functions.",
+      "featureId": "feature-in-eventspage-tsx-keep-the-existing-selectedsport-state-defaulting-to-all-and-add-a-useeffect-that-sets-selectedsport-to-currentsport-when-sportstatus-active-currentsport-is-truthy-otherwise-resets-selectedsport-to-all-the-effect-must-depend-on-sportstatus-currentsport",
+      "featureTitle": "In EventsPage.tsx, keep the existing selectedSport state (defaulting to 'All') and add a useEffect that sets selectedSport to currentSport when sportStatus === 'active' && currentSport is truthy, otherwise resets selectedSport to 'All'. The effect must depend on [sportStatus, currentSport].",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/context/SportContext.tsx"
+        "frontend/src/pages/EventsPage.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -41,6 +40,48 @@
       ],
       "testIds": [
         "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-eventspage-tsx-derive-a-filteredevents-list-from-the-events-array-when-selectedsport-all-filteredevents-equals-the-full-events-array-otherwise-filteredevents-is-events-filtered-to-those-where-event-sport-selectedsport-render-filteredevents-in-place-of-the-raw-events-array",
+      "featureTitle": "In EventsPage.tsx, derive a filteredEvents list from the events array: when selectedSport === 'All', filteredEvents equals the full events array; otherwise, filteredEvents is events filtered to those where event.sport === selectedSport. Render filteredEvents in place of the raw events array.",
+      "files": [
+        "frontend/src/pages/EventsPage.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "camera@1.0.0",
+        "qr-code@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-verify-end-to-end-behavior-1-deactivating-a-sport-resets-the-events-list-to-show-all-events-2-activating-a-sport-e-g-tennis-causes-the-events-list-to-automatically-show-only-events-for-that-sport-3-manually-selecting-all-via-the-filter-chips-still-shows-all-events-4-deactivating-after-a-manual-selection-keeps-the-list-at-all",
+      "featureTitle": "Verify end-to-end behavior: (1) deactivating a sport resets the Events list to show all events; (2) activating a sport (e.g. Tennis) causes the Events list to automatically show only events for that sport; (3) manually selecting 'All' via the filter chips still shows all events; (4) deactivating after a manual selection keeps the list at 'All'.",
+      "files": [
+        "frontend/src/pages/EventsPage.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "camera@1.0.0",
+        "qr-code@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

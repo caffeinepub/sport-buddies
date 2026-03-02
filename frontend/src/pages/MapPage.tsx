@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearch, useLocation } from "@tanstack/react-router";
+import { useNavigate, useLocation } from "@tanstack/react-router";
 import { MapPin, Users, Zap } from "lucide-react";
 import ScreenBanner from "../components/ScreenBanner";
+import { useSport } from "../context/SportContext";
 
 const SPORTS = [
   { id: "all", label: "All" },
@@ -40,7 +41,9 @@ export default function MapPage() {
   const location = useLocation();
   const routeName = location.pathname.replace(/^\//, "") || "map";
 
-  const [selectedSport, setSelectedSport] = useState("all");
+  const { sportStatus, currentSport } = useSport();
+
+  const [selectedFilter, setSelectedFilter] = useState("all");
   const [myStatus, setMyStatus] = useState<string>(() => {
     try {
       return localStorage.getItem("sb_status") || "offline";
@@ -48,6 +51,15 @@ export default function MapPage() {
       return "offline";
     }
   });
+
+  // Auto-sync filter with active sport from context
+  useEffect(() => {
+    if (sportStatus === "active" && currentSport) {
+      setSelectedFilter(currentSport.toLowerCase());
+    } else {
+      setSelectedFilter("all");
+    }
+  }, [sportStatus, currentSport]);
 
   useEffect(() => {
     const handler = () => {
@@ -66,10 +78,10 @@ export default function MapPage() {
     setMyStatus("out_now");
   };
 
-  const filtered =
-    selectedSport === "all"
+  const filteredBuddies =
+    selectedFilter === "all"
       ? MOCK_BUDDIES
-      : MOCK_BUDDIES.filter((b) => b.sport === selectedSport);
+      : MOCK_BUDDIES.filter((b) => b.sport === selectedFilter);
 
   const isLive = myStatus === "out_now";
 
@@ -111,9 +123,9 @@ export default function MapPage() {
           {SPORTS.map((sport) => (
             <button
               key={sport.id}
-              onClick={() => setSelectedSport(sport.id)}
+              onClick={() => setSelectedFilter(sport.id)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
-                selectedSport === sport.id
+                selectedFilter === sport.id
                   ? "bg-gold text-black"
                   : "bg-charcoal text-muted-foreground hover:text-foreground"
               }`}
@@ -125,13 +137,13 @@ export default function MapPage() {
 
         {/* Buddies list */}
         <div className="space-y-3">
-          {filtered.length === 0 && (
+          {filteredBuddies.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p>No buddies nearby for this sport.</p>
             </div>
           )}
-          {filtered.map((buddy) => (
+          {filteredBuddies.map((buddy) => (
             <button
               key={buddy.id}
               onClick={() => navigate({ to: "/presence-detail/$id", params: { id: buddy.id } })}

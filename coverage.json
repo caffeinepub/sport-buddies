@@ -1,37 +1,57 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-26T17:41:52.628Z",
+  "generatedAt": "2026-03-02T04:09:08.668Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "In frontend/src/pages/ActivateSportScreen.tsx, import the useSport hook from the SportContext and call activateSport(sportName) when the user taps a sport icon. After calling activateSport, navigate the user to the Map route (/map).",
+        "summary": "In EventsPage.tsx, import useEffect and useState from React, and import useSport from the SportContext. Consume sportStatus and currentSport from useSport().",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/ActivateSportScreen.tsx"
+          "frontend/src/pages/EventsPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/ActivateSportScreen.tsx"
+          "frontend/src/pages/EventsPage.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure the SportContext (frontend/src/context/SportContext.tsx) is already created and the SportProvider wraps the application root in App.tsx, as established in Block 39. If the context file or provider wrapper is missing, create them with the exact implementation specified: SportStatus ('inactive'|'active'), UserMode ('Out Now'|'On My Way'|'Planned'), locationEnabled boolean, and the activateSport, deactivateSport, setUserMode, and toggleLocation functions.",
+        "summary": "In EventsPage.tsx, keep the existing selectedSport state (defaulting to 'All') and add a useEffect that sets selectedSport to currentSport when sportStatus === 'active' && currentSport is truthy, otherwise resets selectedSport to 'All'. The effect must depend on [sportStatus, currentSport].",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/context/SportContext.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/EventsPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/context/SportContext.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/EventsPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "In EventsPage.tsx, derive a filteredEvents list from the events array: when selectedSport === 'All', filteredEvents equals the full events array; otherwise, filteredEvents is events filtered to those where event.sport === selectedSport. Render filteredEvents in place of the raw events array.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/EventsPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/EventsPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Verify end-to-end behavior: (1) deactivating a sport resets the Events list to show all events; (2) activating a sport (e.g. Tennis) causes the Events list to automatically show only events for that sport; (3) manually selecting 'All' via the filter chips still shows all events; (4) deactivating after a manual selection keeps the list at 'All'.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/EventsPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/EventsPage.tsx"
         ]
       }
     ]
@@ -41,9 +61,7 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/context/SportContext.tsx",
-    "frontend/src/pages/ActivateSportScreen.tsx",
+    "frontend/src/pages/EventsPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

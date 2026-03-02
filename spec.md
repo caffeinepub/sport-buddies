@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Wire `ActivateSportScreen` to `SportContext` so that selecting a sport activates it globally and navigates the user to the Map screen.
+**Goal:** Make EventsPage automatically filter events based on the active sport from SportContext.
 
 **Planned changes:**
-- Ensure `frontend/src/context/SportContext.tsx` exists with `SportProvider` and `useSport`, implementing `SportStatus`, `UserMode`, `locationEnabled`, and the `activateSport`, `deactivateSport`, `setUserMode`, and `toggleLocation` functions.
-- Ensure `SportProvider` wraps the application root in `App.tsx`.
-- In `ActivateSportScreen.tsx`, import `useSport` from `SportContext` and call `activateSport(sportName)` followed by navigation to `/map` when a sport icon is tapped.
-- Each sport icon (Soccer, Basketball, Tennis, Running, Yoga) invokes the handler with its respective sport name.
+- Import `useEffect`, `useState`, and `useSport` in `EventsPage.tsx`, and consume `sportStatus` and `currentSport` from the context
+- Add a `useEffect` that sets `selectedSport` to `currentSport` when a sport is active, and resets it to `'All'` when inactive or no sport is set
+- Derive a `filteredEvents` list from the events array based on `selectedSport`, and render `filteredEvents` instead of the raw events array
+- Preserve the existing manual filter chip UI so users can still change the filter independently
 
-**User-visible outcome:** When the user taps a sport icon on the Activate Sport screen, that sport becomes the active sport in global context and the user is taken to the Map screen.
+**User-visible outcome:** When the user activates a sport, the Events page automatically filters to show only events for that sport. Deactivating the sport resets the list to show all events. Manual filter chip selection continues to work as before.
