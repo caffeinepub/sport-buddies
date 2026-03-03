@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { useCoinBalance } from "../hooks/useCoinBalance";
 
 export type SportStatus = "inactive" | "active";
-export type UserMode = "Out Now" | "On My Way" | "Planned";
+export type UserMode = "normal" | "buddy_finder";
 export type EventStatus = "active" | "completed" | "canceled";
 
 export interface Participant {
@@ -120,7 +120,7 @@ const INITIAL_EVENTS: SportEvent[] = [
 function safeGetItem(key: string, defaultValue: string): string {
   try {
     if (typeof window === "undefined" || !window.localStorage) return defaultValue;
-    return localStorage.getItem(key) || defaultValue;
+    return localStorage.getItem(key) ?? defaultValue;
   } catch {
     return defaultValue;
   }
@@ -146,28 +146,43 @@ function loadAttendedEventIds(): string[] {
   }
 }
 
+function loadLocationEnabled(): boolean {
+  const stored = safeGetItem("sportbuddies_location_enabled", "true");
+  return stored !== "false";
+}
+
+function loadUserMode(): UserMode {
+  const stored = safeGetItem("sportbuddies_user_mode", "normal");
+  return stored === "buddy_finder" ? "buddy_finder" : "normal";
+}
+
 export type SportContextType = {
-  // Existing state
+  // Sport state
   sportStatus: SportStatus;
   currentSport: string | null;
-  userMode: UserMode;
-  locationEnabled: boolean;
   activateSport: (sport: string) => void;
   deactivateSport: () => void;
+
+  // User mode
+  userMode: UserMode;
   setUserMode: (mode: UserMode) => void;
+
+  // Location
+  locationEnabled: boolean;
+  setLocationEnabled: (enabled: boolean) => void;
   toggleLocation: () => void;
 
-  // New: current user
+  // Current user
   currentUser: CurrentUser;
 
-  // New: events
+  // Events
   events: SportEvent[];
   joinEvent: (eventId: string) => void;
   leaveEvent: (eventId: string) => void;
   completeEvent: (eventId: string) => void;
   cancelEvent: (eventId: string) => void;
 
-  // New: attendance
+  // Attendance
   attendedEventIds: string[];
   hasAttended: (eventId: string) => boolean;
   markAttended: (eventId: string) => void;
@@ -179,31 +194,43 @@ const SportContext = createContext<SportContextType | undefined>(undefined);
 function SportProviderInner({ children }: { children: React.ReactNode }) {
   const [sportStatus, setSportStatus] = useState<SportStatus>("inactive");
   const [currentSport, setCurrentSport] = useState<string | null>(null);
-  const [userMode, setUserModeState] = useState<UserMode>("Planned");
-  const [locationEnabled, setLocationEnabled] = useState<boolean>(false);
+  const [userMode, setUserModeState] = useState<UserMode>(loadUserMode);
+  const [locationEnabled, setLocationEnabledState] = useState<boolean>(loadLocationEnabled);
   const [events, setEvents] = useState<SportEvent[]>(INITIAL_EVENTS);
   const [attendedEventIds, setAttendedEventIds] = useState<string[]>(loadAttendedEventIds);
 
   const { addCoins } = useCoinBalance();
 
+  // Persist locationEnabled to localStorage whenever it changes
+  useEffect(() => {
+    safeSetItem("sportbuddies_location_enabled", locationEnabled ? "true" : "false");
+  }, [locationEnabled]);
+
+  // Persist userMode to localStorage whenever it changes
+  useEffect(() => {
+    safeSetItem("sportbuddies_user_mode", userMode);
+  }, [userMode]);
+
   const activateSport = (sport: string) => {
     setCurrentSport(sport);
     setSportStatus("active");
-    setUserModeState("Out Now");
   };
 
   const deactivateSport = () => {
     setCurrentSport(null);
     setSportStatus("inactive");
-    setUserModeState("Planned");
   };
 
   const setUserMode = (mode: UserMode) => {
     setUserModeState(mode);
   };
 
+  const setLocationEnabled = (enabled: boolean) => {
+    setLocationEnabledState(enabled);
+  };
+
   const toggleLocation = () => {
-    setLocationEnabled((prev) => !prev);
+    setLocationEnabledState((prev) => !prev);
   };
 
   const joinEvent = useCallback((eventId: string) => {
@@ -277,6 +304,7 @@ function SportProviderInner({ children }: { children: React.ReactNode }) {
         activateSport,
         deactivateSport,
         setUserMode,
+        setLocationEnabled,
         toggleLocation,
         currentUser: CURRENT_USER,
         events,

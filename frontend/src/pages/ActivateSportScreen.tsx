@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Zap } from "lucide-react";
+import { ArrowLeft, Zap, MapPin } from "lucide-react";
 import { useState } from "react";
 import { usePresenceState } from "../hooks/usePresenceState";
 import { useLocationPermission } from "../hooks/useLocationPermission";
@@ -21,7 +21,7 @@ export default function ActivateSportScreen() {
   const navigate = useNavigate();
   const { activatePresence, clearPresence } = usePresenceState();
   const { permissionState, requestPermission, isChecking } = useLocationPermission();
-  const { sportStatus, currentSport, activateSport, deactivateSport } = useSport();
+  const { sportStatus, currentSport, activateSport, deactivateSport, locationEnabled } = useSport();
   const [selectedSport, setSelectedSport] = useState("soccer");
   const [showLocationModal, setShowLocationModal] = useState(false);
 
@@ -36,6 +36,10 @@ export default function ActivateSportScreen() {
   };
 
   const handleActivate = () => {
+    if (!locationEnabled) {
+      // Location is disabled in settings — don't proceed
+      return;
+    }
     if (permissionState !== "granted") {
       setShowLocationModal(true);
       return;
@@ -66,9 +70,13 @@ export default function ActivateSportScreen() {
     ? `Deactivate ${currentSport}`
     : "Activate My Sport";
 
+  const buttonDisabled = !isActive && !locationEnabled;
+
   const buttonStyle = isActive
     ? { backgroundColor: '#1A1A1A', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.2)' }
-    : { backgroundColor: '#D4AF37', color: '#0A0A0A' };
+    : locationEnabled
+    ? { backgroundColor: '#D4AF37', color: '#0A0A0A' }
+    : { backgroundColor: '#1A1A1A', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'not-allowed' };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0A0A0A' }}>
@@ -103,6 +111,22 @@ export default function ActivateSportScreen() {
           </p>
         </div>
 
+        {/* Location disabled warning */}
+        {!locationEnabled && !isActive && (
+          <div
+            className="w-full max-w-xs flex items-start gap-3 py-3 px-4 rounded-2xl"
+            style={{ backgroundColor: '#1A1A1A', border: '1px solid rgba(255,255,255,0.15)' }}
+          >
+            <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.5)' }} />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>Location is disabled</p>
+              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Enable location in your Profile settings to activate your sport presence.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Active status indicator */}
         {isActive && (
           <div
@@ -113,7 +137,7 @@ export default function ActivateSportScreen() {
           </div>
         )}
 
-        {/* Sport Selector — tap any chip to pick sport and navigate to Map */}
+        {/* Sport Selector */}
         <div className="w-full space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
             {isActive ? "Currently active sport" : "Tap a sport to activate"}
@@ -123,7 +147,8 @@ export default function ActivateSportScreen() {
               <button
                 key={sport.id}
                 onClick={() => {
-                  if (isActive) return; // Don't switch sport while active
+                  if (isActive) return;
+                  if (!locationEnabled) return;
                   setSelectedSport(sport.id);
                   if (permissionState !== "granted") {
                     setShowLocationModal(true);
@@ -137,9 +162,9 @@ export default function ActivateSportScreen() {
                     ? { backgroundColor: '#D4AF37', color: '#0A0A0A', fontWeight: 700 }
                     : {
                         backgroundColor: '#1A1A1A',
-                        color: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)',
+                        color: (isActive || !locationEnabled) ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)',
                         border: '1px solid rgba(255,255,255,0.12)',
-                        cursor: isActive ? 'default' : 'pointer',
+                        cursor: (isActive || !locationEnabled) ? 'default' : 'pointer',
                       }
                 }
               >
@@ -152,7 +177,8 @@ export default function ActivateSportScreen() {
         {/* Smart Activate / Deactivate Button */}
         <button
           onClick={handleButtonPress}
-          className="w-full max-w-xs py-4 rounded-2xl text-base font-bold uppercase tracking-widest transition-all active:scale-95"
+          disabled={buttonDisabled}
+          className="w-full max-w-xs py-4 rounded-2xl text-base font-bold uppercase tracking-widest transition-all active:scale-95 disabled:active:scale-100"
           style={buttonStyle}
         >
           {buttonLabel}

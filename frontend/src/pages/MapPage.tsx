@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "@tanstack/react-router";
-import { MapPin, Users, Zap } from "lucide-react";
+import { MapPin, Users, Zap, RadarIcon } from "lucide-react";
 import ScreenBanner from "../components/ScreenBanner";
 import { useSport } from "../context/SportContext";
 
@@ -39,9 +39,8 @@ function getStatusLabel(status: string) {
 export default function MapPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const routeName = location.pathname.replace(/^\//, "") || "map";
 
-  const { sportStatus, currentSport } = useSport();
+  const { sportStatus, currentSport, locationEnabled, userMode } = useSport();
 
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [myStatus, setMyStatus] = useState<string>(() => {
@@ -84,6 +83,7 @@ export default function MapPage() {
       : MOCK_BUDDIES.filter((b) => b.sport === selectedFilter);
 
   const isLive = myStatus === "out_now";
+  const isBuddyFinder = userMode === "buddy_finder";
 
   return (
     <div className="min-h-screen bg-background pb-6">
@@ -92,7 +92,15 @@ export default function MapPage() {
       <div className="p-4 max-w-lg mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 pt-2">
-          <h1 className="text-2xl font-bold text-foreground">Nearby Buddies</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground">Nearby Buddies</h1>
+            {isBuddyFinder && (
+              <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/40">
+                <RadarIcon className="w-3 h-3" />
+                Finder
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <span className={`w-2.5 h-2.5 rounded-full ${isLive ? "bg-green-400" : myStatus === "on_my_way" ? "bg-blue-400" : "bg-gray-500"}`} />
             <span className="text-xs text-muted-foreground font-medium">
@@ -101,8 +109,30 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* Go Live button */}
-        {!isLive && (
+        {/* Buddy Finder banner */}
+        {isBuddyFinder && (
+          <div className="w-full mb-4 flex items-center gap-2 bg-gold/10 border border-gold/30 text-gold rounded-xl px-4 py-3">
+            <RadarIcon className="w-4 h-4 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-bold">Buddy Finder Active</p>
+              <p className="text-xs text-gold/70">Enhanced matching — showing best sport partners near you</p>
+            </div>
+          </div>
+        )}
+
+        {/* Location disabled notice */}
+        {!locationEnabled && (
+          <div className="w-full mb-4 flex items-center gap-2 bg-white/5 border border-white/10 text-muted-foreground rounded-xl px-4 py-3">
+            <MapPin className="w-4 h-4 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-foreground">Location is disabled</p>
+              <p className="text-xs">Enable location in your Profile to go live and see nearby buddies.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Go Live button — only shown when location is enabled */}
+        {locationEnabled && !isLive && (
           <button
             onClick={handleGoLive}
             className="w-full mb-4 flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm active:scale-95 transition-transform"
@@ -111,7 +141,7 @@ export default function MapPage() {
             Go Live
           </button>
         )}
-        {isLive && (
+        {locationEnabled && isLive && (
           <div className="w-full mb-4 flex items-center justify-center gap-2 bg-green-900/30 border border-green-500/30 text-green-400 rounded-xl py-3 font-semibold text-sm">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             You are Live
@@ -137,37 +167,47 @@ export default function MapPage() {
 
         {/* Buddies list */}
         <div className="space-y-3">
-          {filteredBuddies.length === 0 && (
+          {!locationEnabled ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <MapPin className="w-10 h-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">Enable location to see nearby buddies.</p>
+            </div>
+          ) : filteredBuddies.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p>No buddies nearby for this sport.</p>
             </div>
+          ) : (
+            filteredBuddies.map((buddy) => (
+              <button
+                key={buddy.id}
+                onClick={() => navigate({ to: "/presence-detail/$id", params: { id: buddy.id } })}
+                className={`w-full bg-charcoal rounded-xl p-4 flex items-center gap-4 text-left hover:opacity-90 active:scale-[0.99] transition-all border ${
+                  isBuddyFinder ? "border-gold/20" : "border-white/5"
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  isBuddyFinder ? "bg-gold/30 border border-gold/50" : "bg-gold/20 border border-gold/30"
+                }`}>
+                  <Users className="w-5 h-5 text-gold" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground text-sm">{buddy.name}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{buddy.sport}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${getStatusDot(buddy.status)}`} />
+                    <span className="text-xs text-muted-foreground">{getStatusLabel(buddy.status)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <MapPin className="w-3 h-3" />
+                    {buddy.distance}
+                  </div>
+                </div>
+              </button>
+            ))
           )}
-          {filteredBuddies.map((buddy) => (
-            <button
-              key={buddy.id}
-              onClick={() => navigate({ to: "/presence-detail/$id", params: { id: buddy.id } })}
-              className="w-full bg-charcoal rounded-xl p-4 flex items-center gap-4 text-left hover:opacity-90 active:scale-[0.99] transition-all border border-white/5"
-            >
-              <div className="w-10 h-10 rounded-full bg-gold/20 border border-gold/30 flex items-center justify-center flex-shrink-0">
-                <Users className="w-5 h-5 text-gold" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground text-sm">{buddy.name}</p>
-                <p className="text-xs text-muted-foreground capitalize">{buddy.sport}</p>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${getStatusDot(buddy.status)}`} />
-                  <span className="text-xs text-muted-foreground">{getStatusLabel(buddy.status)}</span>
-                </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="w-3 h-3" />
-                  {buddy.distance}
-                </div>
-              </div>
-            </button>
-          ))}
         </div>
       </div>
     </div>

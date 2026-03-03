@@ -1,55 +1,71 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Smart Activation Modal Button — Block 46",
+  "title": "Add location toggle and user mode switching",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Import useSport hook and destructure sportStatus, currentSport, and deactivateSport in ActivateSportScreen, then derive isActive boolean from sportStatus",
+      "summary": "Add location enable/disable toggle to Profile page with localStorage persistence and integration with existing location permission system",
       "acceptanceCriteria": [
-        "ActivateSportScreen imports useSport from SportContext without errors",
-        "sportStatus, currentSport, and deactivateSport are correctly destructured from useSport()",
-        "isActive evaluates to true when sportStatus is 'active' and false otherwise"
+        "Profile page shows a visible toggle switch labeled 'Location' that reflects the current enabled/disabled state.",
+        "Toggling off hides or disables location-dependent UI (e.g., map nearby buddies, Go Live button on MapPage).",
+        "The `locationEnabled` state persists across page reloads via localStorage.",
+        "When toggling on from a disabled state, the LocationPermissionModal is shown to re-request browser permission.",
+        "State defaults to `true` on first load if no localStorage value exists."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/context/SportContext.tsx",
+          "operation": "modify",
+          "description": "Add `locationEnabled` state (boolean, defaults to true) and `setLocationEnabled` setter to SportContext. Initialize state from localStorage key 'sportbuddies_location_enabled' on mount. Sync changes back to localStorage whenever the state updates. Export both state and setter in the context value."
+        },
+        {
+          "path": "frontend/src/pages/ProfilePage.tsx",
+          "operation": "modify",
+          "description": "Add a toggle switch UI element labeled 'Location' that reads `locationEnabled` from SportContext and calls `setLocationEnabled` on toggle. When toggling from disabled to enabled, trigger the LocationPermissionModal to re-request browser permission using the existing `useLocationPermission` hook. Display the current state (enabled/disabled) visually. Wire the LocationPermissionModal component to appear when permission is needed."
+        },
+        {
+          "path": "frontend/src/pages/MapPage.tsx",
+          "operation": "modify",
+          "description": "Read `locationEnabled` from SportContext. When `locationEnabled` is false, hide or disable the 'Go Live' button and show a message indicating location is disabled. Optionally grey out or hide the nearby buddies list when location is disabled."
+        },
+        {
+          "path": "frontend/src/pages/HomePage.tsx",
+          "operation": "modify",
+          "description": "Read `locationEnabled` from SportContext. When `locationEnabled` is false and the user attempts to activate their sport presence, show a toast or alert prompting them to enable location in their profile settings before they can broadcast their presence."
+        },
+        {
           "path": "frontend/src/pages/ActivateSportScreen.tsx",
           "operation": "modify",
-          "description": "Add import statement for useSport from '../context/SportContext' at the top of the file. Inside the component function, add the destructuring assignment: const { sportStatus, currentSport, deactivateSport } = useSport(). Then derive the isActive boolean: const isActive = sportStatus === 'active'. Ensure these additions integrate with the existing component logic without breaking the current handleActivate flow."
+          "description": "Read `locationEnabled` from SportContext. When `locationEnabled` is false, disable the activate/deactivate presence buttons or show a message prompting the user to enable location in settings. Prevent activation attempts when location is disabled."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Replace static activation button label with dynamic label that displays 'Deactivate {currentSport}' when active or 'Activate My Sport' when inactive",
+      "summary": "Add userMode state to SportContext with persistence and mode selector UI in Profile page",
       "acceptanceCriteria": [
-        "Button label reads 'Activate My Sport' when no sport is active",
-        "Button label reads 'Deactivate {Sport}' (e.g. 'Deactivate Soccer') when a sport is active",
-        "Label updates reactively when sport status changes without a page reload"
+        "SportContext exposes `userMode` (string) and `setUserMode` to all consumers.",
+        "Profile page renders a mode selector (segmented control or dropdown) showing at least 'Normal' and 'Buddy Finder' options.",
+        "Selecting a mode updates `userMode` in context and persists the value in localStorage.",
+        "The selected mode is restored from localStorage on app load.",
+        "Other pages that consume SportContext can read `userMode` to conditionally adjust behavior (e.g., MapPage highlights buddy-finder-specific UI when mode is `\"buddy_finder\"`)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/ActivateSportScreen.tsx",
+          "path": "frontend/src/context/SportContext.tsx",
           "operation": "modify",
-          "description": "Locate the activation button element in the JSX. Replace its static text/children with a dynamic expression: {isActive ? `Deactivate ${currentSport}` : 'Activate My Sport'}. This will cause the button label to reactively update based on the isActive derived state and the currentSport value from SportContext."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Update button onClick handler to call deactivateSport when active or handleActivate when inactive, ensuring sport filtering behavior persists correctly",
-      "acceptanceCriteria": [
-        "Tapping the button when sport is active calls deactivateSport() and transitions sportStatus away from 'active'",
-        "Tapping the button when sport is inactive calls the existing handleActivate() function",
-        "No runtime crashes occur during either action",
-        "Map and Events pages continue to auto-filter by the active sport after activation",
-        "After deactivation, Map and Events pages revert to unfiltered or default state"
-      ],
-      "file_operations": [
+          "description": "Add `userMode` state (string, defaults to 'normal') and `setUserMode` setter to SportContext. Initialize state from localStorage key 'sportbuddies_user_mode' on mount. Sync changes back to localStorage whenever the state updates. Define at least two mode values: 'normal' and 'buddy_finder'. Export both state and setter in the context value."
+        },
         {
-          "path": "frontend/src/pages/ActivateSportScreen.tsx",
+          "path": "frontend/src/pages/ProfilePage.tsx",
           "operation": "modify",
-          "description": "Modify the button's onClick prop to conditionally execute either deactivateSport() or handleActivate() based on isActive. Implementation: onClick={() => { if (isActive) { deactivateSport(); } else { handleActivate(); } }}. Preserve the existing handleActivate function intact. Verify that this change allows the button to toggle between activation and deactivation states without breaking navigation or state management logic."
+          "description": "Add a mode selector UI component (segmented control or dropdown) that displays the current `userMode` from SportContext and allows switching between at least 'Normal' and 'Buddy Finder' modes. When the user selects a mode, call `setUserMode` with the new value. Label the control clearly as 'User Mode' or 'Mode' and show the active selection visually."
+        },
+        {
+          "path": "frontend/src/pages/MapPage.tsx",
+          "operation": "modify",
+          "description": "Read `userMode` from SportContext. When `userMode` is 'buddy_finder', apply visual highlighting or badging to the UI (e.g., highlight the map title, show a 'Buddy Finder Active' banner, or add a badge to nearby users). Provide a clear visual distinction that indicates the user is in buddy-finder mode."
         }
       ]
     }

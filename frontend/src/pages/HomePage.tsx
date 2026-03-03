@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "@tanstack/react-router";
 import { MapPin, Wind, ShoppingBag, ShieldAlert, Zap } from "lucide-react";
+import { toast } from "sonner";
 import ScreenBanner from "../components/ScreenBanner";
 import { PresenceBanner } from "../components/PresenceBanner";
 import { usePresenceState } from "../hooks/usePresenceState";
@@ -13,13 +14,17 @@ export default function HomePage() {
   const { presenceStatus, presenceSport, pocketFlashUntil } = usePresenceState();
   const isPresenceActive = presenceStatus === "OUT_NOW";
 
-  const { sportStatus, currentSport, deactivateSport } = useSport();
+  const { sportStatus, currentSport, deactivateSport, locationEnabled } = useSport();
   const isActive = sportStatus === "active";
 
   const handleActivateButton = () => {
     if (isActive) {
       deactivateSport();
     } else {
+      if (!locationEnabled) {
+        toast.error("Location is disabled. Enable it in your Profile settings before activating your sport.");
+        return;
+      }
       navigate({ to: "/activate" });
     }
   };
@@ -47,11 +52,24 @@ export default function HomePage() {
         <div className="w-full max-w-sm flex flex-col items-center gap-2">
           <button
             onClick={handleActivateButton}
-            className="w-full flex items-center justify-center gap-3 bg-gold text-black rounded-2xl py-5 text-lg font-extrabold uppercase tracking-widest shadow-gold-glow active:scale-95 transition-transform"
+            className={`w-full flex items-center justify-center gap-3 rounded-2xl py-5 text-lg font-extrabold uppercase tracking-widest transition-transform active:scale-95 ${
+              isActive
+                ? "bg-charcoal border border-white/20 text-foreground/70"
+                : locationEnabled
+                ? "bg-gold text-black shadow-gold-glow"
+                : "bg-charcoal border border-white/10 text-muted-foreground"
+            }`}
           >
             <Zap className="w-6 h-6" />
             {isActive ? `Deactivate ${currentSport}` : "Activate My Sport"}
           </button>
+
+          {!locationEnabled && !isActive && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <MapPin className="w-3 h-3" />
+              Enable location in Profile to activate
+            </p>
+          )}
 
           {isActive && (
             <p className="text-sm font-semibold tracking-wide" style={{ color: "gold", marginTop: 8 }}>

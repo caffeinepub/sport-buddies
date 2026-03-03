@@ -1,77 +1,60 @@
 {
   "kind": "build_request",
-  "title": "Smart Activation Modal Button — Block 46",
+  "title": "Add location toggle and user mode switching",
   "projectName": "Sport Buddies",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "In ActivateSportScreen, import useSport from SportContext and destructure sportStatus, currentSport, and deactivateSport. Derive a boolean isActive = sportStatus === 'active'.",
+      "text": "Add a location enable/disable toggle to the Profile page that persists the `locationEnabled` boolean state (defaulting to `true`) in localStorage and reflects the current permission status. When disabled, suppress any location-dependent features (e.g., nearby buddies map, presence broadcasting). Sync this state with the existing `useLocationPermission` hook and the `LocationPermissionModal` component.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "import { useSport } from \"../context/SportContext\";",
-          "const { sportStatus, currentSport, deactivateSport } = useSport();",
-          "const isActive = sportStatus === \"active\";"
+          "const [locationEnabled, setLocationEnabled] = useState(true);"
         ]
       },
       "acceptanceCriteria": [
-        "ActivateSportScreen imports useSport from SportContext without errors",
-        "sportStatus, currentSport, and deactivateSport are correctly destructured from useSport()",
-        "isActive evaluates to true when sportStatus is 'active' and false otherwise"
+        "Profile page shows a visible toggle switch labeled 'Location' that reflects the current enabled/disabled state.",
+        "Toggling off hides or disables location-dependent UI (e.g., map nearby buddies, Go Live button on MapPage).",
+        "The `locationEnabled` state persists across page reloads via localStorage.",
+        "When toggling on from a disabled state, the LocationPermissionModal is shown to re-request browser permission.",
+        "State defaults to `true` on first load if no localStorage value exists."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "In ActivateSportScreen, replace the static activation button label with a dynamic label: when isActive is true display 'Deactivate {currentSport}' (e.g. 'Deactivate Soccer'), otherwise display 'Activate My Sport'.",
+      "text": "Add a `userMode` state (defaulting to `\"normal\"`) to the SportContext and expose a setter so any page can switch modes. Define at least two modes: `\"normal\"` and `\"buddy_finder\"`. Display the current mode in the Profile page with a segmented control or dropdown to switch between modes. Persist the selected mode in localStorage.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "isActive ? `Deactivate ${currentSport}` : \"Activate My Sport\""
+          "const [userMode, setUserMode] = useState(\"normal\");"
         ]
       },
       "acceptanceCriteria": [
-        "Button label reads 'Activate My Sport' when no sport is active",
-        "Button label reads 'Deactivate {Sport}' (e.g. 'Deactivate Soccer') when a sport is active",
-        "Label updates reactively when sport status changes without a page reload"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "In ActivateSportScreen, update the button's onClick handler so that when isActive is true it calls deactivateSport(), and when isActive is false it calls the existing handleActivate() function.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "if (isActive) { deactivateSport(); } else { handleActivate(); }"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Tapping the button when sport is active calls deactivateSport() and transitions sportStatus away from 'active'",
-        "Tapping the button when sport is inactive calls the existing handleActivate() function",
-        "No runtime crashes occur during either action",
-        "Map and Events pages continue to auto-filter by the active sport after activation",
-        "After deactivation, Map and Events pages revert to unfiltered or default state"
+        "SportContext exposes `userMode` (string) and `setUserMode` to all consumers.",
+        "Profile page renders a mode selector (segmented control or dropdown) showing at least 'Normal' and 'Buddy Finder' options.",
+        "Selecting a mode updates `userMode` in context and persists the value in localStorage.",
+        "The selected mode is restored from localStorage on app load.",
+        "Other pages that consume SportContext can read `userMode` to conditionally adjust behavior (e.g., MapPage highlights buddy-finder-specific UI when mode is `\"buddy_finder\"`)."
       ]
     }
   ],
   "constraints": [
-    "Do not modify SportContext internals — only consume existing sportStatus, currentSport, and deactivateSport values",
-    "The existing handleActivate() logic must remain intact and be called for the inactive path",
-    "No changes to backend"
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
+    "All state persistence must use localStorage only — no backend changes required.",
+    "userMode and locationEnabled must be managed in or alongside SportContext (frontend/src/context/SportContext.tsx)."
   ],
   "nonGoals": [
-    "Adding new fields or methods to SportContext",
-    "Changing the visual styling or layout of the activation modal beyond the button label",
-    "Modifying Map or Events filtering logic"
+    "Backend changes for location or user mode storage.",
+    "Real GPS geolocation implementation beyond what useLocationPermission already provides.",
+    "Adding new user modes beyond 'normal' and 'buddy_finder'.",
+    "Authentication or Internet Identity changes."
   ],
   "imageRequirements": {
     "required": [],

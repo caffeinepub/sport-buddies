@@ -1,22 +1,18 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-03-03T02:40:49.782Z",
-  "summary": "All three requirements are implemented in the diff. ActivateSportScreen imports useSport from SportContext, destructures sportStatus/currentSport/deactivateSport, derives isActive, uses a dynamic button label, and routes onClick to deactivateSport() or handleActivate() based on isActive. One minor hallucination is present: the implementation also calls clearPresence() and manipulates localStorage on deactivation, which was not specified in the build request.",
+  "generatedAt": "2026-03-03T07:03:40.635Z",
+  "summary": "Both REQ-1 and REQ-2 are substantially implemented. SportContext exposes locationEnabled/setLocationEnabled and userMode/setUserMode with localStorage persistence and correct defaults. ProfilePage has a location toggle and user mode segmented control. MapPage conditionally renders based on both flags. The LocationPermissionModal is shown when re-enabling location from the Profile page. All major acceptance criteria appear covered.",
   "missing_requirements": [],
-  "hallucinated_features": [
-    {
-      "description": "On deactivation, the button handler also calls clearPresence() and removes/sets localStorage keys (sb_activeSport, sb_status), and the button style changes visually between active/inactive states.",
-      "reason": "The build request only required calling deactivateSport() on the active path and did not specify side effects like clearPresence(), localStorage manipulation, or visual style changes to the button beyond the label. The non-goals explicitly state 'No changes to the visual styling or layout of the activation modal beyond the button label'.",
-      "evidence": [
-        "frontend/src/pages/ActivateSportScreen.tsx"
-      ]
-    }
-  ],
-  "confidence": 0.87,
+  "hallucinated_features": [],
+  "confidence": 0.88,
   "changed_files": [
     "frontend-file-summaries.txt",
+    "frontend/src/context/SportContext.tsx",
     "frontend/src/pages/ActivateSportScreen.tsx",
+    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/pages/MapPage.tsx",
+    "frontend/src/pages/ProfilePage.tsx",
     "project_state.json"
   ]
 }

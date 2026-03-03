@@ -2,10 +2,14 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-activatesportscreen-import-usesport-from-sportcontext-and-destructure-sportstatus-currentsport-and-deactivatesport-derive-a-boolean-isactive-sportstatus-active",
-      "featureTitle": "In ActivateSportScreen, import useSport from SportContext and destructure sportStatus, currentSport, and deactivateSport. Derive a boolean isActive = sportStatus === 'active'.",
+      "featureId": "feature-add-a-location-enable-disable-toggle-to-the-profile-page-that-persists-the-locationenabled-boolean-state-defaulting-to-true-in-localstorage-and-reflects-the-current-permission-status-when-disabled-suppress-any-location-dependent-features-e-g-nearby-buddies-map-presence-broadcasting-sync-this-state-with-the-existing-uselocationpermission-hook-and-the-locationpermissionmodal-component",
+      "featureTitle": "Add a location enable/disable toggle to the Profile page that persists the `locationEnabled` boolean state (defaulting to `true`) in localStorage and reflects the current permission status. When disabled, suppress any location-dependent features (e.g., nearby buddies map, presence broadcasting). Sync this state with the existing `useLocationPermission` hook and the `LocationPermissionModal` component.",
       "files": [
-        "frontend/src/pages/ActivateSportScreen.tsx"
+        "frontend/src/context/SportContext.tsx",
+        "frontend/src/pages/ActivateSportScreen.tsx",
+        "frontend/src/pages/HomePage.tsx",
+        "frontend/src/pages/MapPage.tsx",
+        "frontend/src/pages/ProfilePage.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -23,10 +27,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-activatesportscreen-replace-the-static-activation-button-label-with-a-dynamic-label-when-isactive-is-true-display-deactivate-currentsport-e-g-deactivate-soccer-otherwise-display-activate-my-sport",
-      "featureTitle": "In ActivateSportScreen, replace the static activation button label with a dynamic label: when isActive is true display 'Deactivate {currentSport}' (e.g. 'Deactivate Soccer'), otherwise display 'Activate My Sport'.",
+      "featureId": "feature-add-a-usermode-state-defaulting-to-normal-to-the-sportcontext-and-expose-a-setter-so-any-page-can-switch-modes-define-at-least-two-modes-normal-and-buddy-finder-display-the-current-mode-in-the-profile-page-with-a-segmented-control-or-dropdown-to-switch-between-modes-persist-the-selected-mode-in-localstorage",
+      "featureTitle": "Add a `userMode` state (defaulting to `\"normal\"`) to the SportContext and expose a setter so any page can switch modes. Define at least two modes: `\"normal\"` and `\"buddy_finder\"`. Display the current mode in the Profile page with a segmented control or dropdown to switch between modes. Persist the selected mode in localStorage.",
       "files": [
-        "frontend/src/pages/ActivateSportScreen.tsx"
+        "frontend/src/context/SportContext.tsx",
+        "frontend/src/pages/MapPage.tsx",
+        "frontend/src/pages/ProfilePage.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -40,27 +46,6 @@
       ],
       "testIds": [
         "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-in-activatesportscreen-update-the-button-s-onclick-handler-so-that-when-isactive-is-true-it-calls-deactivatesport-and-when-isactive-is-false-it-calls-the-existing-handleactivate-function",
-      "featureTitle": "In ActivateSportScreen, update the button's onClick handler so that when isActive is true it calls deactivateSport(), and when isActive is false it calls the existing handleActivate() function.",
-      "files": [
-        "frontend/src/pages/ActivateSportScreen.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "camera@1.0.0",
-        "qr-code@1.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
       ],
       "confidence": "high"
     }

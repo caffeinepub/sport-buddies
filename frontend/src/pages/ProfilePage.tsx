@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "@tanstack/react-router";
-import { User, Shield, MapPin, Activity, LogOut } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { User, Shield, MapPin, Activity, LogOut, Radar } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
@@ -10,6 +10,8 @@ import { useLocationPermission } from "../hooks/useLocationPermission";
 import { LocationPermissionModal } from "../components/LocationPermissionModal";
 import { safeNavigate } from "../utils/safeNavigate";
 import ScreenBanner from "../components/ScreenBanner";
+import { useSport } from "../context/SportContext";
+import type { UserMode } from "../context/SportContext";
 
 type StatusOption = "out_now" | "on_my_way" | "planned";
 
@@ -17,6 +19,11 @@ const STATUS_OPTIONS: { id: StatusOption; label: string; color: string; bg: stri
   { id: "out_now", label: "Out Now", color: "text-green-400", bg: "bg-green-900/40", border: "border-green-500/50" },
   { id: "on_my_way", label: "On My Way", color: "text-purple-400", bg: "bg-purple-900/40", border: "border-purple-500/50" },
   { id: "planned", label: "Planned", color: "text-blue-400", bg: "bg-blue-900/40", border: "border-blue-500/50" },
+];
+
+const USER_MODE_OPTIONS: { id: UserMode; label: string; description: string }[] = [
+  { id: "normal", label: "Normal", description: "Standard mode" },
+  { id: "buddy_finder", label: "Buddy Finder", description: "Find sport partners" },
 ];
 
 const SPORT_LABELS: Record<string, string> = {
@@ -33,11 +40,11 @@ const STATUS_STORAGE_KEY = "profile-status-selector";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { identity, clear } = useInternetIdentity();
   const { data: profile } = useGetUserProfile();
   const { isActive: isPresenceActive, presenceSport } = usePresenceState();
   const { permissionState, requestPermission, isChecking } = useLocationPermission();
+  const { locationEnabled, setLocationEnabled, userMode, setUserMode } = useSport();
 
   const [selectedStatus, setSelectedStatus] = useState<StatusOption>(() => {
     try {
@@ -70,8 +77,6 @@ export default function ProfilePage() {
     }
   };
 
-  const locationEnabled = permissionState === "granted";
-
   const handleLocationToggle = async (checked: boolean) => {
     if (checked) {
       if (permissionState === "denied") {
@@ -79,10 +84,9 @@ export default function ProfilePage() {
         return;
       }
       setShowLocationModal(true);
-    }
-    // If toggling off, we can't revoke browser permission programmatically — just inform
-    if (!checked && locationEnabled) {
-      toast.info("To disable location, update your browser settings.");
+    } else {
+      setLocationEnabled(false);
+      toast.info("Location disabled. Enable it again from your profile settings.");
     }
   };
 
@@ -90,9 +94,19 @@ export default function ProfilePage() {
     const granted = await requestPermission();
     setShowLocationModal(false);
     if (granted) {
+      setLocationEnabled(true);
       toast.success("Location enabled!");
     } else {
+      setLocationEnabled(false);
       toast.error("Location permission denied. Check your browser settings.");
+    }
+  };
+
+  const handleModeSelect = (mode: UserMode) => {
+    setUserMode(mode);
+    const option = USER_MODE_OPTIONS.find((o) => o.id === mode);
+    if (option) {
+      toast.success(`Mode set to "${option.label}"`);
     }
   };
 
@@ -179,13 +193,45 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* User Mode Selector */}
+        <div className="bg-charcoal border border-white/10 rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Radar className="w-4 h-4 text-gold" />
+            <h2 className="text-sm font-semibold text-foreground">User Mode</h2>
+          </div>
+          <div className="flex gap-2">
+            {USER_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => handleModeSelect(option.id)}
+                className={`flex-1 py-2.5 px-2 rounded-lg text-xs font-semibold border transition-all ${
+                  userMode === option.id
+                    ? "bg-gold/20 text-gold border-gold/50 shadow-sm"
+                    : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10"
+                }`}
+              >
+                <span className="block">{option.label}</span>
+                <span className={`block text-[10px] font-normal mt-0.5 ${userMode === option.id ? "text-gold/70" : "text-muted-foreground/60"}`}>
+                  {option.description}
+                </span>
+              </button>
+            ))}
+          </div>
+          {userMode === "buddy_finder" && (
+            <p className="text-xs text-gold/80 mt-2 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse inline-block" />
+              Buddy Finder mode is active — enhanced matching on Map
+            </p>
+          )}
+        </div>
+
         {/* Location Toggle */}
         <div className="bg-charcoal border border-white/10 rounded-xl p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-gold" />
               <div>
-                <p className="text-sm font-semibold text-foreground">Location Enabled</p>
+                <p className="text-sm font-semibold text-foreground">Location</p>
                 <p className={`text-xs font-medium mt-0.5 ${locationEnabled ? "text-green-400" : "text-muted-foreground"}`}>
                   {locationEnabled ? "ON — Location active" : "OFF — Location disabled"}
                 </p>
