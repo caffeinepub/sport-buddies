@@ -3,7 +3,7 @@ import { MapPin, Wind, ShoppingBag, ShieldAlert, Zap } from "lucide-react";
 import ScreenBanner from "../components/ScreenBanner";
 import { PresenceBanner } from "../components/PresenceBanner";
 import { usePresenceState } from "../hooks/usePresenceState";
-import { safeNavigate } from "../utils/safeNavigate";
+import { useSport } from "../context/SportContext";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -11,13 +11,24 @@ export default function HomePage() {
   const routeName = location.pathname === "/" ? "Home" : location.pathname.replace(/^\//, "");
 
   const { presenceStatus, presenceSport, pocketFlashUntil } = usePresenceState();
-  const isActive = presenceStatus === "OUT_NOW";
+  const isPresenceActive = presenceStatus === "OUT_NOW";
+
+  const { sportStatus, currentSport, deactivateSport } = useSport();
+  const isActive = sportStatus === "active";
+
+  const handleActivateButton = () => {
+    if (isActive) {
+      deactivateSport();
+    } else {
+      navigate({ to: "/activate" });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <ScreenBanner screenName="HomeScreen" routeName={routeName} />
 
-      {isActive && presenceSport && pocketFlashUntil !== null && (
+      {isPresenceActive && presenceSport && pocketFlashUntil !== null && (
         <PresenceBanner sport={presenceSport} pocketFlashUntil={pocketFlashUntil} />
       )}
 
@@ -32,14 +43,22 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* PRIMARY CTA — ACTIVATE MY SPORT */}
-        <button
-          onClick={() => navigate({ to: "/activate" })}
-          className="w-full max-w-sm flex items-center justify-center gap-3 bg-gold text-black rounded-2xl py-5 text-lg font-extrabold uppercase tracking-widest shadow-gold-glow active:scale-95 transition-transform"
-        >
-          <Zap className="w-6 h-6" />
-          Activate My Sport
-        </button>
+        {/* PRIMARY CTA — ACTIVATE / DEACTIVATE */}
+        <div className="w-full max-w-sm flex flex-col items-center gap-2">
+          <button
+            onClick={handleActivateButton}
+            className="w-full flex items-center justify-center gap-3 bg-gold text-black rounded-2xl py-5 text-lg font-extrabold uppercase tracking-widest shadow-gold-glow active:scale-95 transition-transform"
+          >
+            <Zap className="w-6 h-6" />
+            {isActive ? `Deactivate ${currentSport}` : "Activate My Sport"}
+          </button>
+
+          {isActive && (
+            <p className="text-sm font-semibold tracking-wide" style={{ color: "gold", marginTop: 8 }}>
+              🔥 Out Now • {currentSport}
+            </p>
+          )}
+        </div>
 
         {/* SECONDARY BUTTONS */}
         <div className="w-full max-w-sm grid grid-cols-2 gap-3">

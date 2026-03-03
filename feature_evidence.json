@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-eventspage-tsx-import-useeffect-and-usestate-from-react-and-import-usesport-from-the-sportcontext-consume-sportstatus-and-currentsport-from-usesport",
-      "featureTitle": "In EventsPage.tsx, import useEffect and useState from React, and import useSport from the SportContext. Consume sportStatus and currentSport from useSport().",
+      "featureId": "feature-in-activatesportscreen-import-usesport-from-sportcontext-and-destructure-sportstatus-currentsport-and-deactivatesport-derive-a-boolean-isactive-sportstatus-active",
+      "featureTitle": "In ActivateSportScreen, import useSport from SportContext and destructure sportStatus, currentSport, and deactivateSport. Derive a boolean isActive = sportStatus === 'active'.",
       "files": [
-        "frontend/src/pages/EventsPage.tsx"
+        "frontend/src/pages/ActivateSportScreen.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -23,10 +23,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-eventspage-tsx-keep-the-existing-selectedsport-state-defaulting-to-all-and-add-a-useeffect-that-sets-selectedsport-to-currentsport-when-sportstatus-active-currentsport-is-truthy-otherwise-resets-selectedsport-to-all-the-effect-must-depend-on-sportstatus-currentsport",
-      "featureTitle": "In EventsPage.tsx, keep the existing selectedSport state (defaulting to 'All') and add a useEffect that sets selectedSport to currentSport when sportStatus === 'active' && currentSport is truthy, otherwise resets selectedSport to 'All'. The effect must depend on [sportStatus, currentSport].",
+      "featureId": "feature-in-activatesportscreen-replace-the-static-activation-button-label-with-a-dynamic-label-when-isactive-is-true-display-deactivate-currentsport-e-g-deactivate-soccer-otherwise-display-activate-my-sport",
+      "featureTitle": "In ActivateSportScreen, replace the static activation button label with a dynamic label: when isActive is true display 'Deactivate {currentSport}' (e.g. 'Deactivate Soccer'), otherwise display 'Activate My Sport'.",
       "files": [
-        "frontend/src/pages/EventsPage.tsx"
+        "frontend/src/pages/ActivateSportScreen.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -44,10 +44,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-in-eventspage-tsx-derive-a-filteredevents-list-from-the-events-array-when-selectedsport-all-filteredevents-equals-the-full-events-array-otherwise-filteredevents-is-events-filtered-to-those-where-event-sport-selectedsport-render-filteredevents-in-place-of-the-raw-events-array",
-      "featureTitle": "In EventsPage.tsx, derive a filteredEvents list from the events array: when selectedSport === 'All', filteredEvents equals the full events array; otherwise, filteredEvents is events filtered to those where event.sport === selectedSport. Render filteredEvents in place of the raw events array.",
+      "featureId": "feature-in-activatesportscreen-update-the-button-s-onclick-handler-so-that-when-isactive-is-true-it-calls-deactivatesport-and-when-isactive-is-false-it-calls-the-existing-handleactivate-function",
+      "featureTitle": "In ActivateSportScreen, update the button's onClick handler so that when isActive is true it calls deactivateSport(), and when isActive is false it calls the existing handleActivate() function.",
       "files": [
-        "frontend/src/pages/EventsPage.tsx"
+        "frontend/src/pages/ActivateSportScreen.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -61,27 +61,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-verify-end-to-end-behavior-1-deactivating-a-sport-resets-the-events-list-to-show-all-events-2-activating-a-sport-e-g-tennis-causes-the-events-list-to-automatically-show-only-events-for-that-sport-3-manually-selecting-all-via-the-filter-chips-still-shows-all-events-4-deactivating-after-a-manual-selection-keeps-the-list-at-all",
-      "featureTitle": "Verify end-to-end behavior: (1) deactivating a sport resets the Events list to show all events; (2) activating a sport (e.g. Tennis) causes the Events list to automatically show only events for that sport; (3) manually selecting 'All' via the filter chips still shows all events; (4) deactivating after a manual selection keeps the list at 'All'.",
-      "files": [
-        "frontend/src/pages/EventsPage.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "camera@1.0.0",
-        "qr-code@1.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
       ],
       "confidence": "high"
     }

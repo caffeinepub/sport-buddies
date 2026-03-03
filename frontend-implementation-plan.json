@@ -1,69 +1,55 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Block 44 — EventsPage auto-filters by currentSport from SportContext",
+  "title": "Smart Activation Modal Button — Block 46",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Import React hooks and SportContext into EventsPage to consume sportStatus and currentSport",
+      "summary": "Import useSport hook and destructure sportStatus, currentSport, and deactivateSport in ActivateSportScreen, then derive isActive boolean from sportStatus",
       "acceptanceCriteria": [
-        "EventsPage imports useEffect, useState, and useSport",
-        "The component calls useSport() and destructures sportStatus and currentSport"
+        "ActivateSportScreen imports useSport from SportContext without errors",
+        "sportStatus, currentSport, and deactivateSport are correctly destructured from useSport()",
+        "isActive evaluates to true when sportStatus is 'active' and false otherwise"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/EventsPage.tsx",
+          "path": "frontend/src/pages/ActivateSportScreen.tsx",
           "operation": "modify",
-          "description": "Add imports for useEffect and useState from 'react', and import useSport from '../context/SportContext'. Inside the EventsPage component, call const { sportStatus, currentSport } = useSport() to access sport context state."
+          "description": "Add import statement for useSport from '../context/SportContext' at the top of the file. Inside the component function, add the destructuring assignment: const { sportStatus, currentSport, deactivateSport } = useSport(). Then derive the isActive boolean: const isActive = sportStatus === 'active'. Ensure these additions integrate with the existing component logic without breaking the current handleActivate flow."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add useEffect to sync selectedSport with currentSport when sport is active, resetting to 'All' when inactive",
+      "summary": "Replace static activation button label with dynamic label that displays 'Deactivate {currentSport}' when active or 'Activate My Sport' when inactive",
       "acceptanceCriteria": [
-        "When sportStatus becomes 'active' and currentSport is set, selectedSport automatically updates to match currentSport",
-        "When sportStatus is 'inactive' or currentSport is falsy, selectedSport resets to 'All'",
-        "The useEffect re-runs whenever sportStatus or currentSport changes"
+        "Button label reads 'Activate My Sport' when no sport is active",
+        "Button label reads 'Deactivate {Sport}' (e.g. 'Deactivate Soccer') when a sport is active",
+        "Label updates reactively when sport status changes without a page reload"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/EventsPage.tsx",
+          "path": "frontend/src/pages/ActivateSportScreen.tsx",
           "operation": "modify",
-          "description": "Add a useEffect hook that observes [sportStatus, currentSport]. When sportStatus === 'active' && currentSport is truthy, call setSelectedSport(currentSport). Otherwise, call setSelectedSport('All'). This ensures the filter auto-updates when the user activates or deactivates a sport."
+          "description": "Locate the activation button element in the JSX. Replace its static text/children with a dynamic expression: {isActive ? `Deactivate ${currentSport}` : 'Activate My Sport'}. This will cause the button label to reactively update based on the isActive derived state and the currentSport value from SportContext."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Derive filteredEvents list from events array based on selectedSport and render it in the UI",
+      "summary": "Update button onClick handler to call deactivateSport when active or handleActivate when inactive, ensuring sport filtering behavior persists correctly",
       "acceptanceCriteria": [
-        "When selectedSport is 'All', all events are displayed",
-        "When selectedSport is a specific sport (e.g. 'Tennis'), only events with event.sport === 'Tennis' are displayed",
-        "The event list UI renders from filteredEvents, not the raw events array"
+        "Tapping the button when sport is active calls deactivateSport() and transitions sportStatus away from 'active'",
+        "Tapping the button when sport is inactive calls the existing handleActivate() function",
+        "No runtime crashes occur during either action",
+        "Map and Events pages continue to auto-filter by the active sport after activation",
+        "After deactivation, Map and Events pages revert to unfiltered or default state"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/EventsPage.tsx",
+          "path": "frontend/src/pages/ActivateSportScreen.tsx",
           "operation": "modify",
-          "description": "Before rendering the event list, derive filteredEvents by checking: if selectedSport === 'All', set filteredEvents = events; otherwise, set filteredEvents = events.filter(e => e.sport === selectedSport). Replace all references to the 'events' array in the render section with 'filteredEvents' so only matching events are displayed."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Verify end-to-end auto-filter behavior when activating, deactivating, and manually selecting sport filters",
-      "acceptanceCriteria": [
-        "Deactivating sport shows all events in EventsPage",
-        "Activating a sport auto-filters EventsPage to only that sport's events",
-        "Tapping the 'All' filter chip manually shows all events regardless of sport status",
-        "Deactivating sport after any filter state resets display to all events"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/EventsPage.tsx",
-          "operation": "modify",
-          "description": "Ensure that the existing manual filter chip UI remains functional and that the useEffect-driven state changes do not remove user control. Test the following flows: (1) deactivate sport → verify selectedSport becomes 'All' and all events render; (2) activate a sport (e.g. Tennis) → verify selectedSport becomes 'Tennis' and only Tennis events render; (3) manually tap 'All' chip → verify all events render; (4) deactivate after manual selection → verify selectedSport resets to 'All' and all events render. Preserve all existing filter chip onClick handlers."
+          "description": "Modify the button's onClick prop to conditionally execute either deactivateSport() or handleActivate() based on isActive. Implementation: onClick={() => { if (isActive) { deactivateSport(); } else { handleActivate(); } }}. Preserve the existing handleActivate function intact. Verify that this change allows the button to toggle between activation and deactivation states without breaking navigation or state management logic."
         }
       ]
     }

@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Zap } from "lucide-react";
 import { useState } from "react";
 import { usePresenceState } from "../hooks/usePresenceState";
@@ -19,15 +19,13 @@ const SPORTS = [
 
 export default function ActivateSportScreen() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { presenceStatus, activatePresence, clearPresence } = usePresenceState();
+  const { activatePresence, clearPresence } = usePresenceState();
   const { permissionState, requestPermission, isChecking } = useLocationPermission();
-  const { activateSport, deactivateSport } = useSport();
+  const { sportStatus, currentSport, activateSport, deactivateSport } = useSport();
   const [selectedSport, setSelectedSport] = useState("soccer");
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [activated, setActivated] = useState(false);
 
-  const isActive = presenceStatus === "OUT_NOW";
+  const isActive = sportStatus === "active";
 
   const onPickSport = (sportName: string) => {
     activateSport(sportName);
@@ -43,7 +41,6 @@ export default function ActivateSportScreen() {
       return;
     }
     onPickSport(selectedSport);
-    setActivated(true);
   };
 
   const handleEnableLocation = async () => {
@@ -51,17 +48,27 @@ export default function ActivateSportScreen() {
     if (granted) {
       setShowLocationModal(false);
       onPickSport(selectedSport);
-      setActivated(true);
     }
   };
 
-  const handleDeactivate = () => {
-    deactivateSport();
-    clearPresence();
-    localStorage.removeItem("sb_activeSport");
-    localStorage.setItem("sb_status", "offline");
-    setActivated(false);
+  const handleButtonPress = () => {
+    if (isActive) {
+      deactivateSport();
+      clearPresence();
+      localStorage.removeItem("sb_activeSport");
+      localStorage.setItem("sb_status", "offline");
+    } else {
+      handleActivate();
+    }
   };
+
+  const buttonLabel = isActive
+    ? `Deactivate ${currentSport}`
+    : "Activate My Sport";
+
+  const buttonStyle = isActive
+    ? { backgroundColor: '#1A1A1A', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.2)' }
+    : { backgroundColor: '#D4AF37', color: '#0A0A0A' };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0A0A0A' }}>
@@ -96,16 +103,27 @@ export default function ActivateSportScreen() {
           </p>
         </div>
 
+        {/* Active status indicator */}
+        {isActive && (
+          <div
+            className="w-full max-w-xs py-3 rounded-2xl text-sm font-semibold text-center"
+            style={{ backgroundColor: '#0D2B0D', color: '#4ADE80', border: '1px solid #4ADE80' }}
+          >
+            ✓ ACTIVE — {SPORTS.find(s => s.id === currentSport?.toLowerCase())?.label ?? currentSport}
+          </div>
+        )}
+
         {/* Sport Selector — tap any chip to pick sport and navigate to Map */}
         <div className="w-full space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            Tap a sport to activate
+            {isActive ? "Currently active sport" : "Tap a sport to activate"}
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
             {SPORTS.map((sport) => (
               <button
                 key={sport.id}
                 onClick={() => {
+                  if (isActive) return; // Don't switch sport while active
                   setSelectedSport(sport.id);
                   if (permissionState !== "granted") {
                     setShowLocationModal(true);
@@ -115,9 +133,14 @@ export default function ActivateSportScreen() {
                 }}
                 className="px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95"
                 style={
-                  selectedSport === sport.id
+                  (isActive ? currentSport?.toLowerCase() === sport.id : selectedSport === sport.id)
                     ? { backgroundColor: '#D4AF37', color: '#0A0A0A', fontWeight: 700 }
-                    : { backgroundColor: '#1A1A1A', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)' }
+                    : {
+                        backgroundColor: '#1A1A1A',
+                        color: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        cursor: isActive ? 'default' : 'pointer',
+                      }
                 }
               >
                 {sport.label}
@@ -126,32 +149,14 @@ export default function ActivateSportScreen() {
           </div>
         </div>
 
-        {/* Activate / Deactivate Button */}
-        {!isActive && !activated ? (
-          <button
-            onClick={handleActivate}
-            className="w-full max-w-xs py-4 rounded-2xl text-base font-bold uppercase tracking-widest transition-all active:scale-95"
-            style={{ backgroundColor: '#D4AF37', color: '#0A0A0A' }}
-          >
-            Activate My Sport
-          </button>
-        ) : (
-          <div className="w-full max-w-xs space-y-3 text-center">
-            <div
-              className="py-3 rounded-2xl text-sm font-semibold"
-              style={{ backgroundColor: '#0D2B0D', color: '#4ADE80', border: '1px solid #4ADE80' }}
-            >
-              ✓ ACTIVE — {SPORTS.find(s => s.id === selectedSport)?.label ?? selectedSport}
-            </div>
-            <button
-              onClick={handleDeactivate}
-              className="w-full py-3 rounded-2xl text-sm font-medium transition-all active:scale-95"
-              style={{ backgroundColor: '#1A1A1A', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              Deactivate
-            </button>
-          </div>
-        )}
+        {/* Smart Activate / Deactivate Button */}
+        <button
+          onClick={handleButtonPress}
+          className="w-full max-w-xs py-4 rounded-2xl text-base font-bold uppercase tracking-widest transition-all active:scale-95"
+          style={buttonStyle}
+        >
+          {buttonLabel}
+        </button>
 
         {/* Enter Map shortcut */}
         <button

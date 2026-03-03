@@ -1,43 +1,35 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Sports activity app with EventsScreen that auto-filters events based on active sport via SportContext (sportStatus/currentSport). Map also auto-filters by active sport. Built incrementally in numbered blocks.",
+  "summary": "Mobile sports app with sport activation/deactivation flow. Features include a SportContext (sportStatus, currentSport, deactivateSport), an ActivateSportScreen with a smart modal button that toggles label and action based on active sport status, and auto-filtering of Map and Events by active sport.",
   "architectural_notes": [
-    "SportContext provides sportStatus and currentSport; used to drive auto-filtering across screens (Map, Events)",
-    "EventsScreen uses useEffect on [sportStatus, currentSport] to sync selectedSport filter state"
+    "SportContext exposes sportStatus, currentSport, and deactivateSport; consumed by ActivateSportScreen",
+    "ActivateSportScreen button label and action are driven by isActive = sportStatus === 'active'"
   ],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-in-eventspage-tsx-import-useeffect-and-usestate-from-react-and-import-usesport-from-the-sportcontext-consume-sportstatus-and-currentsport-from-usesport",
-      "title": "In EventsPage.tsx, import useEffect and useState from React, and import useSport from the SportContext. Consume sportStatus and currentSport from useSport().",
+      "id": "feature-in-activatesportscreen-import-usesport-from-sportcontext-and-destructure-sportstatus-currentsport-and-deactivatesport-derive-a-boolean-isactive-sportstatus-active",
+      "title": "In ActivateSportScreen, import useSport from SportContext and destructure sportStatus, currentSport, and deactivateSport. Derive a boolean isActive = sportStatus === 'active'.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-in-eventspage-tsx-keep-the-existing-selectedsport-state-defaulting-to-all-and-add-a-useeffect-that-sets-selectedsport-to-currentsport-when-sportstatus-active-currentsport-is-truthy-otherwise-resets-selectedsport-to-all-the-effect-must-depend-on-sportstatus-currentsport",
-      "title": "In EventsPage.tsx, keep the existing selectedSport state (defaulting to 'All') and add a useEffect that sets selectedSport to currentSport when sportStatus === 'active' && currentSport is truthy, otherwise resets selectedSport to 'All'. The effect must depend on [sportStatus, currentSport].",
+      "id": "feature-in-activatesportscreen-replace-the-static-activation-button-label-with-a-dynamic-label-when-isactive-is-true-display-deactivate-currentsport-e-g-deactivate-soccer-otherwise-display-activate-my-sport",
+      "title": "In ActivateSportScreen, replace the static activation button label with a dynamic label: when isActive is true display 'Deactivate {currentSport}' (e.g. 'Deactivate Soccer'), otherwise display 'Activate My Sport'.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-in-eventspage-tsx-derive-a-filteredevents-list-from-the-events-array-when-selectedsport-all-filteredevents-equals-the-full-events-array-otherwise-filteredevents-is-events-filtered-to-those-where-event-sport-selectedsport-render-filteredevents-in-place-of-the-raw-events-array",
-      "title": "In EventsPage.tsx, derive a filteredEvents list from the events array: when selectedSport === 'All', filteredEvents equals the full events array; otherwise, filteredEvents is events filtered to those where event.sport === selectedSport. Render filteredEvents in place of the raw events array.",
+      "id": "feature-in-activatesportscreen-update-the-button-s-onclick-handler-so-that-when-isactive-is-true-it-calls-deactivatesport-and-when-isactive-is-false-it-calls-the-existing-handleactivate-function",
+      "title": "In ActivateSportScreen, update the button's onClick handler so that when isActive is true it calls deactivateSport(), and when isActive is false it calls the existing handleActivate() function.",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-verify-end-to-end-behavior-1-deactivating-a-sport-resets-the-events-list-to-show-all-events-2-activating-a-sport-e-g-tennis-causes-the-events-list-to-automatically-show-only-events-for-that-sport-3-manually-selecting-all-via-the-filter-chips-still-shows-all-events-4-deactivating-after-a-manual-selection-keeps-the-list-at-all",
-      "title": "Verify end-to-end behavior: (1) deactivating a sport resets the Events list to show all events; (2) activating a sport (e.g. Tennis) causes the Events list to automatically show only events for that sport; (3) manually selecting 'All' via the filter chips still shows all events; (4) deactivating after a manual selection keeps the list at 'All'.",
-      "reqIds": [
-        "REQ-4"
       ],
       "version": 1
     }
@@ -45,7 +37,7 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "EventsScreen auto-filters to currentSport when sportStatus is active, shows All when inactive",
+      "summary": "Smart Activation Modal Button: toggle button label/action based on sport active status (Activate My Sport / Deactivate {Sport})",
       "reqIds": [],
       "status": "pending"
     }

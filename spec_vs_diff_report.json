@@ -1,14 +1,22 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-03-02T04:09:08.664Z",
-  "summary": "All four requirements are implemented in the diff. EventsPage.tsx imports useEffect and useState from React, imports useSport from SportContext, destructures sportStatus and currentSport, adds a useEffect with the correct dependency array [sportStatus, currentSport], derives filteredEvents, and renders filteredEvents with the manual chip UI preserved. REQ-4 is a behavioral/e2e verification requirement and the code structure correctly supports all four described behaviors.",
+  "generatedAt": "2026-03-03T02:40:49.782Z",
+  "summary": "All three requirements are implemented in the diff. ActivateSportScreen imports useSport from SportContext, destructures sportStatus/currentSport/deactivateSport, derives isActive, uses a dynamic button label, and routes onClick to deactivateSport() or handleActivate() based on isActive. One minor hallucination is present: the implementation also calls clearPresence() and manipulates localStorage on deactivation, which was not specified in the build request.",
   "missing_requirements": [],
-  "hallucinated_features": [],
-  "confidence": 0.97,
+  "hallucinated_features": [
+    {
+      "description": "On deactivation, the button handler also calls clearPresence() and removes/sets localStorage keys (sb_activeSport, sb_status), and the button style changes visually between active/inactive states.",
+      "reason": "The build request only required calling deactivateSport() on the active path and did not specify side effects like clearPresence(), localStorage manipulation, or visual style changes to the button beyond the label. The non-goals explicitly state 'No changes to the visual styling or layout of the activation modal beyond the button label'.",
+      "evidence": [
+        "frontend/src/pages/ActivateSportScreen.tsx"
+      ]
+    }
+  ],
+  "confidence": 0.87,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/pages/EventsPage.tsx",
+    "frontend/src/pages/ActivateSportScreen.tsx",
     "project_state.json"
   ]
 }
