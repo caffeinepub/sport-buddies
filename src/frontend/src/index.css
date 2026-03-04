@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Sport Buddies Brand Colors - MAROON / GOLD / BLACK Theme */
+    /* Background: Black to Charcoal gradient */
+    --background: oklch(0.06 0.01 0);
+    --foreground: oklch(0.98 0 0);
+
+    /* Cards: Charcoal with subtle borders */
+    --card: oklch(0.1 0.01 0);
+    --card-foreground: oklch(0.98 0 0);
+
+    --popover: oklch(0.1 0.01 0);
+    --popover-foreground: oklch(0.98 0 0);
+
+    /* Primary: Dark Maroon (#4B0F16) */
+    --primary: oklch(0.25 0.1 15);
+    --primary-foreground: oklch(0.98 0 0);
+
+    /* Primary Dark: Maroon Dark (#2A070B) */
+    --primary-dark: oklch(0.15 0.08 15);
+
+    /* Secondary: Charcoal for secondary elements */
+    --secondary: oklch(0.1 0.01 0);
+    --secondary-foreground: oklch(0.98 0 0);
+
+    /* Muted: Subtle backgrounds and muted text */
+    --muted: oklch(0.12 0.01 0);
+    --muted-foreground: oklch(0.72 0 0 / 0.72);
+
+    /* Accent: Gold (#D4AF37) */
+    --accent: oklch(0.75 0.12 85);
+    --accent-foreground: oklch(0.06 0.01 0);
+
+    /* Accent Dark: Gold Dark (#B88A12) for hover states */
+    --accent-dark: oklch(0.65 0.12 85);
+
+    /* Destructive: Red for errors */
+    --destructive: oklch(0.55 0.22 25);
+    --destructive-foreground: oklch(0.98 0 0);
+
+    /* Border: Subtle white border */
+    --border: oklch(0.98 0 0 / 0.08);
+    --border-gold: oklch(0.75 0.12 85 / 0.55);
+
+    /* Input: Subtle background with border */
+    --input-bg: oklch(0.98 0 0 / 0.04);
+    --input-border: oklch(0.98 0 0 / 0.14);
+    --input: oklch(0.98 0 0 / 0.14);
+
+    --ring: oklch(0.75 0.12 85);
+
+    /* Chart colors */
+    --chart-1: oklch(0.65 0.18 25);
+    --chart-2: oklch(0.7 0.15 140);
+    --chart-3: oklch(0.75 0.12 85);
+    --chart-4: oklch(0.6 0.15 260);
+    --chart-5: oklch(0.68 0.14 340);
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Sport Buddies Brand Colors - Dark Mode (same as light for this theme) */
+    --background: oklch(0.06 0.01 0);
+    --foreground: oklch(0.98 0 0);
+
+    --card: oklch(0.1 0.01 0);
+    --card-foreground: oklch(0.98 0 0);
+
+    --popover: oklch(0.1 0.01 0);
+    --popover-foreground: oklch(0.98 0 0);
+
+    --primary: oklch(0.25 0.1 15);
+    --primary-foreground: oklch(0.98 0 0);
+
+    --primary-dark: oklch(0.15 0.08 15);
+
+    --secondary: oklch(0.1 0.01 0);
+    --secondary-foreground: oklch(0.98 0 0);
+
+    --muted: oklch(0.12 0.01 0);
+    --muted-foreground: oklch(0.72 0 0 / 0.72);
+
+    --accent: oklch(0.75 0.12 85);
+    --accent-foreground: oklch(0.06 0.01 0);
+
+    --accent-dark: oklch(0.65 0.12 85);
+
+    --destructive: oklch(0.55 0.22 25);
+    --destructive-foreground: oklch(0.98 0 0);
+
+    --border: oklch(0.98 0 0 / 0.08);
+    --border-gold: oklch(0.75 0.12 85 / 0.55);
+
+    --input-bg: oklch(0.98 0 0 / 0.04);
+    --input-border: oklch(0.98 0 0 / 0.14);
+    --input: oklch(0.98 0 0 / 0.14);
+
+    --ring: oklch(0.75 0.12 85);
+
+    --chart-1: oklch(0.65 0.18 25);
+    --chart-2: oklch(0.7 0.15 140);
+    --chart-3: oklch(0.75 0.12 85);
+    --chart-4: oklch(0.6 0.15 260);
+    --chart-5: oklch(0.68 0.14 340);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background: linear-gradient(
+      to bottom,
+      oklch(0.06 0.01 0),
+      oklch(0.1 0.01 0)
+    );
+    min-height: 100vh;
+  }
+}
+
+/* Hide scrollbar for horizontal scroll areas */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Primary Button Styling */
+.btn-primary {
+  background-color: oklch(0.75 0.12 85);
+  color: oklch(0.06 0.01 0);
+  font-weight: 700;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: oklch(0.65 0.12 85);
+}
+
+/* Secondary Button Styling */
+.btn-secondary {
+  background-color: transparent;
+  border: 2px solid oklch(0.75 0.12 85 / 0.55);
+  color: oklch(0.75 0.12 85);
+}
+
+.btn-secondary:hover {
+  box-shadow: 0 0 12px oklch(0.75 0.12 85 / 0.3);
+}
+
+/* Form Input Styling */
+input,
+textarea,
+select {
+  background-color: oklch(0.98 0 0 / 0.04) !important;
+  border-color: oklch(0.98 0 0 / 0.14) !important;
+  color: oklch(0.98 0 0) !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: oklch(0.75 0.12 85) !important;
+  outline: none;
+  box-shadow: 0 0 0 1px oklch(0.75 0.12 85);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: oklch(0.72 0 0 / 0.72) !important;
+}
+
+label {
+  color: oklch(0.72 0 0 / 0.72) !important;
+}
