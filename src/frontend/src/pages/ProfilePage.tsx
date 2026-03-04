@@ -90,6 +90,8 @@ export default function ProfilePage() {
     trustScore,
     eventsAttendedCount,
     eventsHostedCount,
+    profileCompleted,
+    setProfileCompleted,
   } = useSport();
 
   const [selectedStatus, setSelectedStatus] = useState<StatusOption>(() => {
@@ -267,6 +269,55 @@ export default function ProfilePage() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Profile Completion Gate (Block 57) */}
+        <div
+          className={`rounded-xl p-4 mb-4 border ${
+            profileCompleted
+              ? "bg-charcoal border-green-500/40"
+              : "bg-charcoal border-yellow-500/40"
+          }`}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base">{profileCompleted ? "✅" : "⚠️"}</span>
+            <h2 className="text-sm font-semibold text-foreground">
+              Profile Status
+            </h2>
+          </div>
+          <p
+            className={`text-sm font-bold mb-3 ${
+              profileCompleted ? "text-green-400" : "text-yellow-400"
+            }`}
+          >
+            {profileCompleted ? "Complete" : "Incomplete"}
+          </p>
+          {!profileCompleted && (
+            <p className="text-xs text-muted-foreground mb-3">
+              Complete your profile to unlock sport activation and event
+              joining.
+            </p>
+          )}
+          {!profileCompleted && (
+            <button
+              type="button"
+              data-ocid="profile.complete_profile.button"
+              onClick={() => setProfileCompleted(true)}
+              className="w-full py-2.5 rounded-lg text-xs font-bold bg-yellow-900/40 text-yellow-300 border border-yellow-500/40 hover:bg-yellow-900/60 transition-all active:scale-95"
+            >
+              Complete Profile (Dev Toggle)
+            </button>
+          )}
+          {profileCompleted && (
+            <button
+              type="button"
+              data-ocid="profile.reset_profile.button"
+              onClick={() => setProfileCompleted(false)}
+              className="w-full py-2 rounded-lg text-xs font-medium bg-white/5 text-muted-foreground border border-white/10 hover:bg-white/10 transition-all active:scale-95"
+            >
+              Reset (Dev Toggle)
+            </button>
+          )}
         </div>
 
         {/* Status Selector */}

@@ -3,6 +3,7 @@ import { MapPin, RadarIcon, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import ScreenBanner from "../components/ScreenBanner";
 import { useSport } from "../context/SportContext";
+import { useWhoIsOut } from "../hooks/useWhoIsOut";
 
 const SPORTS = [
   { id: "all", label: "All" },
@@ -72,11 +73,26 @@ function getStatusLabel(status: string) {
   return "Planned";
 }
 
+/** Format minutes remaining from an epoch timestamp */
+function minutesRemaining(expiresAt: number): string {
+  const ms = expiresAt - Date.now();
+  if (ms <= 0) return "expired";
+  const mins = Math.ceil(ms / 60_000);
+  return `${mins}m left`;
+}
+
 export default function MapPage() {
   const navigate = useNavigate();
   const _location = useLocation();
 
-  const { sportStatus, currentSport, locationEnabled, userMode } = useSport();
+  const {
+    sportStatus,
+    currentSport,
+    locationEnabled,
+    userMode,
+    myPresence,
+    isPresenceActive,
+  } = useSport();
 
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [myStatus, setMyStatus] = useState<string>(() => {
@@ -108,6 +124,15 @@ export default function MapPage() {
     return () => window.removeEventListener("storage", handler);
   }, []);
 
+  // Block 70 — Who's Out Now layer (reads live presence feed)
+  const { liveRecords, refresh: refreshWhoIsOut } = useWhoIsOut(selectedFilter);
+
+  // Refresh the who's-out list whenever filter changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedFilter change is already handled by useWhoIsOut internals; we refresh manually here as well
+  useEffect(() => {
+    refreshWhoIsOut();
+  }, [refreshWhoIsOut]);
+
   const handleGoLive = () => {
     localStorage.setItem("sb_status", "out_now");
     setMyStatus("out_now");
@@ -118,7 +143,7 @@ export default function MapPage() {
       ? MOCK_BUDDIES
       : MOCK_BUDDIES.filter((b) => b.sport === selectedFilter);
 
-  const isLive = myStatus === "out_now";
+  const isLive = myStatus === "out_now" || isPresenceActive;
   const isBuddyFinder = userMode === "buddy_finder";
 
   return (
@@ -194,9 +219,17 @@ export default function MapPage() {
           </button>
         )}
         {locationEnabled && isLive && (
-          <div className="w-full mb-4 flex items-center justify-center gap-2 bg-green-900/30 border border-green-500/30 text-green-400 rounded-xl py-3 font-semibold text-sm">
+          <div
+            data-ocid="map.live_status.panel"
+            className="w-full mb-4 flex items-center justify-center gap-2 bg-green-900/30 border border-green-500/30 text-green-400 rounded-xl py-3 font-semibold text-sm"
+          >
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             You are Live
+            {myPresence && (
+              <span className="text-xs text-green-300/70 ml-1">
+                · {myPresence.sport} · {minutesRemaining(myPresence.expiresAt)}
+              </span>
+            )}
           </div>
         )}
 
@@ -206,6 +239,7 @@ export default function MapPage() {
             <button
               type="button"
               key={sport.id}
+              data-ocid={`map.filter.${sport.id}.tab`}
               onClick={() => setSelectedFilter(sport.id)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
                 selectedFilter === sport.id
@@ -218,6 +252,70 @@ export default function MapPage() {
           ))}
         </div>
 
+        {/* ─── Block 70: WHO'S OUT NOW LAYER ─── */}
+        {locationEnabled && liveRecords.length > 0 && (
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+              <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">
+                Who's Out Now
+              </h2>
+              <span className="text-xs text-muted-foreground ml-auto">
+                {liveRecords.length} active
+              </span>
+            </div>
+            <div className="space-y-2">
+              {liveRecords.map((record) => (
+                <div
+                  key={record.id}
+                  data-ocid={`map.whos_out.item.${record.id}`}
+                  className="w-full bg-green-950/40 border border-green-500/25 rounded-xl p-3 flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-green-900/60 border border-green-500/40">
+                    <span className="text-base leading-none">
+                      {record.id === "me" ? "🧑" : "👤"}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-foreground">
+                      {record.id === "me" ? "You" : record.displayName}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {record.sport}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-0.5">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                      <span className="text-xs text-green-400 font-medium">
+                        Out Now
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {minutesRemaining(record.expiresAt)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty who's-out state when sport is active but feed is empty */}
+        {locationEnabled && isPresenceActive && liveRecords.length === 0 && (
+          <div
+            data-ocid="map.whos_out.empty_state"
+            className="mb-5 w-full bg-green-950/20 border border-green-500/15 rounded-xl p-4 text-center"
+          >
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block mb-2" />
+            <p className="text-xs text-green-400 font-semibold">You're live</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              No other players out right now for this sport.
+            </p>
+          </div>
+        )}
+        {/* ─── End Block 70 ─── */}
+
         {/* Buddies list */}
         <div className="space-y-3">
           {!locationEnabled ? (
@@ -226,7 +324,10 @@ export default function MapPage() {
               <p className="text-sm">Enable location to see nearby buddies.</p>
             </div>
           ) : filteredBuddies.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+            <div
+              data-ocid="map.buddies.empty_state"
+              className="text-center py-12 text-muted-foreground"
+            >
               <Users className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p>No buddies nearby for this sport.</p>
             </div>
@@ -235,6 +336,7 @@ export default function MapPage() {
               <button
                 type="button"
                 key={buddy.id}
+                data-ocid={`map.buddy.item.${buddy.id}`}
                 onClick={() =>
                   navigate({
                     to: "/presence-detail/$id",

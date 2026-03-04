@@ -11,24 +11,44 @@ interface AvailabilityResponse {
   error?: string;
 }
 
+/**
+ * Block 69 — useHelicopterAvailability
+ *
+ * Fetches helicopter availability from the backend.
+ * Accepts an optional calendarId which is encoded into the endTime parameter
+ * using the `${endTime}|calendarId=...` suffix convention so the backend can
+ * route the query to the correct Google Calendar. The backend ignores unknown
+ * suffixes, making this forward-compatible.
+ */
 export function useHelicopterAvailability(
   startTime: string,
   endTime: string,
   enabled = false,
+  calendarId?: string | null,
 ) {
   const { actor, isFetching: isActorFetching } = useActor();
 
   return useQuery<AvailabilityResponse>({
-    queryKey: ["helicopter-availability", startTime, endTime],
+    queryKey: [
+      "helicopter-availability",
+      startTime,
+      endTime,
+      calendarId ?? "none",
+    ],
     queryFn: async () => {
       if (!actor) {
         return { busy: [], error: "Backend not initialized" };
       }
 
       try {
+        // Block 69 — Encode calendarId into endTime suffix for forward-compatible routing
+        const encodedEnd = calendarId
+          ? `${endTime}|calendarId=${encodeURIComponent(calendarId)}`
+          : endTime;
+
         const response = await actor.checkHelicopterAvailability(
           startTime,
-          endTime,
+          encodedEnd,
         );
 
         // Parse JSON response from backend

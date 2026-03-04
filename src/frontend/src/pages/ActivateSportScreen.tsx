@@ -30,6 +30,7 @@ export default function ActivateSportScreen() {
     locationEnabled,
     emergencyState,
     emergencyLevel,
+    profileCompleted,
   } = useSport();
   const [selectedSport, setSelectedSport] = useState("soccer");
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -45,6 +46,13 @@ export default function ActivateSportScreen() {
   };
 
   const handleActivate = () => {
+    // Block 57: profile must be complete before activating
+    if (!profileCompleted) {
+      alert(
+        "Complete Profile\n\nYou must complete your profile before going live.",
+      );
+      return;
+    }
     if (!locationEnabled) {
       // Location is disabled in settings — don't proceed
       return;
@@ -91,7 +99,7 @@ export default function ActivateSportScreen() {
     emergencyState === "escalated" ||
     emergencyState === "rescue";
   const buttonDisabled =
-    (!isActive && !locationEnabled) ||
+    (!isActive && (!profileCompleted || !locationEnabled)) ||
     isEmergencyTriggered ||
     emergencyLevel > 0;
 
@@ -152,6 +160,30 @@ export default function ActivateSportScreen() {
             Select your sport and go live instantly.
           </p>
         </div>
+
+        {/* Profile incomplete warning */}
+        {!profileCompleted && !isActive && (
+          <div
+            className="w-full max-w-xs flex items-start gap-3 py-3 px-4 rounded-2xl"
+            style={{
+              backgroundColor: "#1A0D00",
+              border: "1px solid rgba(212,175,55,0.4)",
+            }}
+          >
+            <span className="text-sm mt-0.5 flex-shrink-0">⚠️</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "#D4AF37" }}>
+                Profile incomplete
+              </p>
+              <p
+                className="text-xs mt-0.5"
+                style={{ color: "rgba(255,255,255,0.4)" }}
+              >
+                Complete your profile on the Profile tab before going live.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Location disabled warning */}
         {!locationEnabled && !isActive && (
@@ -216,6 +248,7 @@ export default function ActivateSportScreen() {
                 onClick={() => {
                   if (isEmergencyTriggered || emergencyLevel > 0) return;
                   if (isActive) return;
+                  if (!profileCompleted) return;
                   if (!locationEnabled) return;
                   setSelectedSport(sport.id);
                   if (permissionState !== "granted") {
