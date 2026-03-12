@@ -7,9 +7,13 @@ import {
   createRoute,
   createRouter,
 } from "@tanstack/react-router";
+import { useCallback, useState } from "react";
 import BottomTabBar from "./components/BottomTabBar";
+import { GameDetailCard } from "./components/GameDetailCard";
 import Header from "./components/Header";
 import { SportProvider, useSport } from "./context/SportContext";
+import { useGameSessions } from "./hooks/useGameSessions";
+import { useNewGameNotification } from "./hooks/useNewGameNotification";
 import ActivateSportScreen from "./pages/ActivateSportScreen";
 import AuthPage from "./pages/AuthPage";
 import CoinGrabPage from "./pages/CoinGrabPage";
@@ -38,6 +42,34 @@ import SessionPage from "./pages/SessionPage";
 import StorePage from "./pages/StorePage";
 
 const queryClient = new QueryClient();
+
+// Block 86/87 — fires in-app toast when a new game is created for the user's active sport.
+// Block 87 adds a "Join" action button on the toast that auto-joins and opens the lobby.
+function GameNotificationWatcher() {
+  const { currentSport } = useSport();
+  const { joinSession } = useGameSessions();
+  const [lobbyGameId, setLobbyGameId] = useState<string | null>(null);
+  const [lobbyOpen, setLobbyOpen] = useState(false);
+
+  const handleJoinFromToast = useCallback(
+    (gameId: string) => {
+      joinSession(gameId);
+      setLobbyGameId(gameId);
+      setLobbyOpen(true);
+    },
+    [joinSession],
+  );
+
+  useNewGameNotification(currentSport, handleJoinFromToast);
+
+  return (
+    <GameDetailCard
+      open={lobbyOpen}
+      gameId={lobbyGameId}
+      onClose={() => setLobbyOpen(false)}
+    />
+  );
+}
 
 // Emergency banner shown globally when triggered/escalated/rescue
 function EmergencyBanner() {
@@ -316,6 +348,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SportProvider>
+        <GameNotificationWatcher />
         <RouterProvider router={router} />
         <Toaster position="bottom-center" richColors />
       </SportProvider>

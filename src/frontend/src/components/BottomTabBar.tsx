@@ -1,5 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Calendar, Coins, Home, Map as MapIcon, User } from "lucide-react";
+import { useSport } from "../context/SportContext";
+import { useAvailableGames } from "../hooks/useAvailableGames";
+import { useOpenGameSpots } from "../hooks/useOpenGameSpots";
+import { useUnreadChatCount } from "../hooks/useUnreadChatCount";
 
 const TABS = [
   { path: "/", icon: Home, label: "Home", ocid: "nav.home.tab" },
@@ -12,6 +16,10 @@ const TABS = [
 export default function BottomTabBar() {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const { currentSport } = useSport();
+  const { unreadCount } = useUnreadChatCount(currentSport);
+  const { openSpots } = useOpenGameSpots(currentSport);
+  const { availableGames } = useAvailableGames(currentSport);
 
   return (
     <nav
@@ -37,7 +45,33 @@ export default function BottomTabBar() {
               color: isActive ? "#D4AF37" : "rgba(255,255,255,0.55)",
             }}
           >
-            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+            <div className="relative">
+              <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+              {path === "/map" && unreadCount > 0 && (
+                <span
+                  data-ocid="nav.map.chat_badge"
+                  className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none"
+                >
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+              {path === "/map" && openSpots > 0 && (
+                <span
+                  data-ocid="nav.map.open_spots_badge"
+                  className="absolute -top-1.5 -left-2 min-w-[16px] h-4 px-1 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center leading-none"
+                >
+                  {openSpots > 99 ? "99+" : openSpots}
+                </span>
+              )}
+              {path === "/events" && availableGames > 0 && (
+                <span
+                  data-ocid="nav.events.available_games_badge"
+                  className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center leading-none"
+                >
+                  {availableGames > 99 ? "99+" : availableGames}
+                </span>
+              )}
+            </div>
             <span className="mt-1">{label}</span>
           </Link>
         );

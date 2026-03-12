@@ -1,8 +1,22 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { MapPin, RadarIcon, Users, Zap } from "lucide-react";
+import { Gamepad2, MapPin, RadarIcon, Users, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AthleteProfileCard } from "../components/AthleteProfileCard";
+import { CreateGameModal } from "../components/CreateGameModal";
+import { GameDetailCard } from "../components/GameDetailCard";
+import { MapMarkerLayer } from "../components/MapMarkerLayer";
 import ScreenBanner from "../components/ScreenBanner";
+import { SportChatPanel } from "../components/SportChatPanel";
 import { useSport } from "../context/SportContext";
+import { useDemoChatSeed } from "../hooks/useDemoChatSeed";
+import { useDemoPresenceSeed } from "../hooks/useDemoPresenceSeed";
+import { useGameSessions } from "../hooks/useGameSessions";
+import {
+  SPORT_COLOR,
+  SPORT_EMOJI,
+  useMapMarkers,
+} from "../hooks/useMapMarkers";
+import { useUnreadChatCount } from "../hooks/useUnreadChatCount";
 import { useWhoIsOut } from "../hooks/useWhoIsOut";
 
 const SPORTS = [
@@ -85,6 +99,11 @@ export default function MapPage() {
   const navigate = useNavigate();
   const _location = useLocation();
 
+  // Block 71 — seed demo athletes into the Who's Out Now layer
+  useDemoPresenceSeed();
+  // Block 80 — seed demo chat messages for each sport (only if chat is empty)
+  useDemoChatSeed();
+
   const {
     sportStatus,
     currentSport,
@@ -93,6 +112,12 @@ export default function MapPage() {
     myPresence,
     isPresenceActive,
   } = useSport();
+
+  // Block 81 — Chat Activity Badge: markAsRead clears the unread badge when chat opens
+  const { markAsRead } = useUnreadChatCount(currentSport);
+
+  const [showCreateGame, setShowCreateGame] = useState(false);
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [myStatus, setMyStatus] = useState<string>(() => {
@@ -127,8 +152,35 @@ export default function MapPage() {
   // Block 70 — Who's Out Now layer (reads live presence feed)
   const { liveRecords, refresh: refreshWhoIsOut } = useWhoIsOut(selectedFilter);
 
+  // Block 74 — Live Athlete Map Markers
+  const { markers, selectedMarkerId, selectMarker } =
+    useMapMarkers(selectedFilter);
+
+  // Block 82 — Game Session Markers
+  const { gameMarkers } = useGameSessions(selectedFilter);
+
+  // Block 75 — Derive selected athlete for the profile card.
+  // Falls back to liveRecords if the marker isn't on the canvas (e.g. tapped from Who's Out Now list).
+  const selectedAthlete = (() => {
+    if (!selectedMarkerId || selectedMarkerId === "me") return null;
+    const fromMarker = markers.find((m) => m.id === selectedMarkerId);
+    if (fromMarker) return fromMarker;
+    // Fallback: look up from the live presence feed
+    const fromRecord = liveRecords.find((r) => r.id === selectedMarkerId);
+    if (!fromRecord) return null;
+    const sportKey = fromRecord.sport.toLowerCase();
+    return {
+      id: fromRecord.id,
+      displayName: fromRecord.displayName,
+      sport: fromRecord.sport,
+      sportEmoji: SPORT_EMOJI[sportKey] ?? SPORT_EMOJI.default,
+      markerColor: SPORT_COLOR[sportKey] ?? SPORT_COLOR.default,
+      distanceLabel: fromRecord.distanceLabel,
+      expiresAt: fromRecord.expiresAt,
+    };
+  })();
+
   // Refresh the who's-out list whenever filter changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selectedFilter change is already handled by useWhoIsOut internals; we refresh manually here as well
   useEffect(() => {
     refreshWhoIsOut();
   }, [refreshWhoIsOut]);
@@ -233,6 +285,31 @@ export default function MapPage() {
           </div>
         )}
 
+        {/* Block 82 — Create Game button (only shown when presence is active) */}
+        {isPresenceActive && currentSport && (
+          <button
+            type="button"
+            data-ocid="map.create_game.button"
+            onClick={() => setShowCreateGame(true)}
+            className="w-full mb-4 flex items-center justify-center gap-2 bg-charcoal border border-white/10 text-foreground rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform hover:bg-white/5"
+          >
+            <Gamepad2 className="w-4 h-4 text-gold" />
+            Create Game
+          </button>
+        )}
+
+        {/* Block 74 — Live Athlete Map Markers */}
+        <div className="mb-4">
+          <MapMarkerLayer
+            markers={markers}
+            selectedMarkerId={selectedMarkerId}
+            onSelectMarker={selectMarker}
+            gameMarkers={gameMarkers}
+            selectedGameId={selectedGameId}
+            onSelectGame={setSelectedGameId}
+          />
+        </div>
+
         {/* Sport filter chips */}
         <div className="flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-hide">
           {SPORTS.map((sport) => (
@@ -266,10 +343,13 @@ export default function MapPage() {
             </div>
             <div className="space-y-2">
               {liveRecords.map((record) => (
-                <div
+                <button
+                  type="button"
                   key={record.id}
                   data-ocid={`map.whos_out.item.${record.id}`}
-                  className="w-full bg-green-950/40 border border-green-500/25 rounded-xl p-3 flex items-center gap-3"
+                  onClick={() => record.id !== "me" && selectMarker(record.id)}
+                  disabled={record.id === "me"}
+                  className="w-full bg-green-950/40 border border-green-500/25 rounded-xl p-3 flex items-center gap-3 text-left transition-all disabled:cursor-default cursor-pointer hover:bg-green-950/60 active:scale-[0.99]"
                 >
                   <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-green-900/60 border border-green-500/40">
                     <span className="text-base leading-none">
@@ -295,7 +375,7 @@ export default function MapPage() {
                       {minutesRemaining(record.expiresAt)}
                     </span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -315,6 +395,116 @@ export default function MapPage() {
           </div>
         )}
         {/* ─── End Block 70 ─── */}
+
+        {/* ─── Block 83: ACTIVE GAMES LIST ─── */}
+        {locationEnabled && (gameMarkers.length > 0 || isPresenceActive) && (
+          <div data-ocid="map.active_games.section" className="mb-5">
+            {/* Section header */}
+            <div className="flex items-center gap-2 mb-3">
+              <Gamepad2 className="w-3.5 h-3.5 text-gold flex-shrink-0" />
+              <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">
+                Active Games
+              </h2>
+              {gameMarkers.length > 0 && (
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {gameMarkers.length} game{gameMarkers.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            {gameMarkers.length === 0 ? (
+              <div
+                data-ocid="map.active_games.empty_state"
+                className="w-full bg-charcoal border border-white/8 rounded-xl p-4 text-center"
+              >
+                <span className="text-xl block mb-1">🎮</span>
+                <p className="text-xs text-muted-foreground">
+                  No active games nearby.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {gameMarkers.map((marker, idx) => (
+                  <button
+                    type="button"
+                    key={marker.id}
+                    data-ocid={`map.active_games.item.${idx + 1}`}
+                    onClick={() => setSelectedGameId(marker.id)}
+                    className="w-full bg-charcoal border border-white/8 rounded-xl p-3 flex items-center gap-3 text-left transition-all hover:bg-white/5 active:scale-[0.99] cursor-pointer"
+                  >
+                    {/* Sport emoji icon */}
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 border border-white/10"
+                      style={{ backgroundColor: `${marker.markerColor}22` }}
+                    >
+                      <span className="text-lg leading-none">
+                        {marker.sportEmoji}
+                      </span>
+                    </div>
+
+                    {/* Center column */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground leading-tight">
+                        {marker.sport}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
+                        📍 {marker.locationLabel}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                        🕐{" "}
+                        {new Date(marker.startTime).toLocaleTimeString(
+                          "en-US",
+                          {
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          },
+                        )}{" "}
+                        ·{" "}
+                        {new Date(marker.startTime).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Player count badge */}
+                    <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                      <span
+                        className="text-xs font-semibold px-2 py-1 rounded-full border"
+                        style={{
+                          color: marker.markerColor,
+                          backgroundColor: `${marker.markerColor}18`,
+                          borderColor: `${marker.markerColor}44`,
+                        }}
+                      >
+                        👥 {marker.participantCount}/{marker.maxPlayers}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        {/* ─── End Block 83 ─── */}
+
+        {/* ─── Block 79: LIVE SPORT CHAT PANEL ─── */}
+        {currentSport && (
+          <div className="mb-5">
+            <SportChatPanel
+              sport={currentSport}
+              isActive={isPresenceActive}
+              authorId="me"
+              authorName="You"
+              onOpen={markAsRead}
+            />
+          </div>
+        )}
+        {/* ─── End Block 79 ─── */}
 
         {/* Buddies list */}
         <div className="space-y-3">
@@ -383,6 +573,41 @@ export default function MapPage() {
           )}
         </div>
       </div>
+
+      {/* Block 75 — Athlete Profile Card (bottom sheet) */}
+      <AthleteProfileCard
+        open={!!selectedAthlete}
+        onClose={() => selectMarker(null)}
+        athlete={
+          selectedAthlete
+            ? {
+                id: selectedAthlete.id,
+                displayName: selectedAthlete.displayName,
+                sport: selectedAthlete.sport,
+                sportEmoji: selectedAthlete.sportEmoji,
+                markerColor: selectedAthlete.markerColor,
+                distanceLabel: selectedAthlete.distanceLabel || undefined,
+                expiresAt: selectedAthlete.expiresAt,
+              }
+            : null
+        }
+      />
+
+      {/* Block 82 — Create Game Modal */}
+      {currentSport && (
+        <CreateGameModal
+          open={showCreateGame}
+          onClose={() => setShowCreateGame(false)}
+          defaultSport={currentSport}
+        />
+      )}
+
+      {/* Block 82 — Game Detail Card */}
+      <GameDetailCard
+        open={!!selectedGameId}
+        onClose={() => setSelectedGameId(null)}
+        gameId={selectedGameId}
+      />
     </div>
   );
 }

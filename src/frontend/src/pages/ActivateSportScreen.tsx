@@ -6,6 +6,7 @@ import ScreenBanner from "../components/ScreenBanner";
 import { useSport } from "../context/SportContext";
 import { useLocationPermission } from "../hooks/useLocationPermission";
 import { usePresenceState } from "../hooks/usePresenceState";
+import { useSportActivityCounts } from "../hooks/useSportActivityCounts";
 
 const SPORTS = [
   { id: "soccer", label: "⚽ Soccer" },
@@ -34,6 +35,12 @@ export default function ActivateSportScreen() {
   } = useSport();
   const [selectedSport, setSelectedSport] = useState("soccer");
   const [showLocationModal, setShowLocationModal] = useState(false);
+
+  // Block 72 — sport activity counters from presence feed
+  const sportCounts = useSportActivityCounts();
+
+  // Block 73 — total active players across all sports
+  const totalActive = Object.values(sportCounts).reduce((sum, n) => sum + n, 0);
 
   const isActive = sportStatus === "active";
 
@@ -161,6 +168,17 @@ export default function ActivateSportScreen() {
           </p>
         </div>
 
+        {/* Block 73 — Global Activity Summary */}
+        {totalActive > 0 && (
+          <div
+            data-ocid="activate.global_activity_summary.panel"
+            className="text-sm font-semibold text-center"
+            style={{ color: "#D4AF37" }}
+          >
+            🔥 {totalActive} player{totalActive !== 1 ? "s" : ""} out right now
+          </div>
+        )}
+
         {/* Profile incomplete warning */}
         {!profileCompleted && !isActive && (
           <div
@@ -241,49 +259,73 @@ export default function ActivateSportScreen() {
             {isActive ? "Currently active sport" : "Tap a sport to activate"}
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
-            {SPORTS.map((sport) => (
-              <button
-                type="button"
-                key={sport.id}
-                onClick={() => {
-                  if (isEmergencyTriggered || emergencyLevel > 0) return;
-                  if (isActive) return;
-                  if (!profileCompleted) return;
-                  if (!locationEnabled) return;
-                  setSelectedSport(sport.id);
-                  if (permissionState !== "granted") {
-                    setShowLocationModal(true);
-                  } else {
-                    onPickSport(sport.id);
+            {SPORTS.map((sport) => {
+              const activeCount = sportCounts[sport.id] ?? 0;
+              const isSelected = isActive
+                ? currentSport?.toLowerCase() === sport.id
+                : selectedSport === sport.id;
+              return (
+                <button
+                  type="button"
+                  key={sport.id}
+                  data-ocid={`activate.sport_tile.${sport.id}.button`}
+                  onClick={() => {
+                    if (isEmergencyTriggered || emergencyLevel > 0) return;
+                    if (isActive) return;
+                    if (!profileCompleted) return;
+                    if (!locationEnabled) return;
+                    setSelectedSport(sport.id);
+                    if (permissionState !== "granted") {
+                      setShowLocationModal(true);
+                    } else {
+                      onPickSport(sport.id);
+                    }
+                  }}
+                  className="px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95 flex items-center gap-1.5"
+                  style={
+                    isSelected
+                      ? {
+                          backgroundColor: "#D4AF37",
+                          color: "#0A0A0A",
+                          fontWeight: 700,
+                        }
+                      : {
+                          backgroundColor: "#1A1A1A",
+                          color:
+                            isActive || !locationEnabled
+                              ? "rgba(255,255,255,0.3)"
+                              : "rgba(255,255,255,0.6)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          cursor:
+                            isActive || !locationEnabled
+                              ? "default"
+                              : "pointer",
+                        }
                   }
-                }}
-                className="px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95"
-                style={
-                  (
-                    isActive
-                      ? currentSport?.toLowerCase() === sport.id
-                      : selectedSport === sport.id
-                  )
-                    ? {
-                        backgroundColor: "#D4AF37",
-                        color: "#0A0A0A",
-                        fontWeight: 700,
+                >
+                  <span>{sport.label}</span>
+                  {activeCount > 0 && (
+                    <span
+                      data-ocid={`activate.sport_count.${sport.id}.panel`}
+                      className="text-xs font-bold px-1.5 py-0.5 rounded-full leading-none"
+                      style={
+                        isSelected
+                          ? {
+                              backgroundColor: "rgba(0,0,0,0.2)",
+                              color: "#0A0A0A",
+                            }
+                          : {
+                              backgroundColor: "rgba(212,175,55,0.18)",
+                              color: "#D4AF37",
+                            }
                       }
-                    : {
-                        backgroundColor: "#1A1A1A",
-                        color:
-                          isActive || !locationEnabled
-                            ? "rgba(255,255,255,0.3)"
-                            : "rgba(255,255,255,0.6)",
-                        border: "1px solid rgba(255,255,255,0.12)",
-                        cursor:
-                          isActive || !locationEnabled ? "default" : "pointer",
-                      }
-                }
-              >
-                {sport.label}
-              </button>
-            ))}
+                    >
+                      {activeCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 

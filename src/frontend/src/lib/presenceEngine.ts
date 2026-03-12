@@ -25,6 +25,8 @@ export interface PresenceRecord {
   status: PresenceStatus;
   /** Simulated distance label for display */
   distanceLabel?: string;
+  /** True for seeded demo athletes — never a real user */
+  isDemo?: boolean;
 }
 
 // ---------- safe localStorage helpers ----------
@@ -125,7 +127,7 @@ export function readPresenceFeed(): PresenceRecord[] {
   }
 }
 
-function upsertPresenceFeed(record: PresenceRecord): void {
+export function upsertPresenceFeed(record: PresenceRecord): void {
   const feed = readPresenceFeed();
   const idx = feed.findIndex((r) => r.id === record.id);
   if (idx >= 0) {

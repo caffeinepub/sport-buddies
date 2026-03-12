@@ -1,6 +1,14 @@
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "@tanstack/react-router";
-import { Activity, LogOut, MapPin, Radar, Shield, User } from "lucide-react";
+import {
+  Activity,
+  LogOut,
+  Mail,
+  MapPin,
+  Radar,
+  Shield,
+  User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LocationPermissionModal } from "../components/LocationPermissionModal";
@@ -8,10 +16,27 @@ import ScreenBanner from "../components/ScreenBanner";
 import { useSport } from "../context/SportContext";
 import type { UserMode } from "../context/SportContext";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useInviteRecords } from "../hooks/useInviteRecords";
 import { useLocationPermission } from "../hooks/useLocationPermission";
 import { usePresenceState } from "../hooks/usePresenceState";
 import { useGetUserProfile } from "../hooks/useQueries";
 import { safeNavigate } from "../utils/safeNavigate";
+
+/**
+ * Returns a human-readable relative timestamp for a unix-ms timestamp.
+ * e.g. "just now", "2 minutes ago", "1 hour ago", "3 days ago"
+ */
+function formatTimeAgo(ts: number): string {
+  const diffMs = Date.now() - ts;
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? "" : "s"} ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`;
+}
 
 type StatusOption = "out_now" | "on_my_way" | "planned";
 
@@ -94,6 +119,15 @@ export default function ProfilePage() {
     setProfileCompleted,
   } = useSport();
 
+  const { inviteRecords, clearInvites } = useInviteRecords();
+
+  // Tick every 30 s so relative timestamps re-evaluate without a page reload.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
   const [selectedStatus, setSelectedStatus] = useState<StatusOption>(() => {
     try {
       const stored = localStorage.getItem(STATUS_STORAGE_KEY);
@@ -168,6 +202,11 @@ export default function ProfilePage() {
 
   const handleEmergencyShield = () => {
     safeNavigate("/sos", navigate);
+  };
+
+  const handleClearInvites = () => {
+    clearInvites();
+    toast.success("Invites cleared");
   };
 
   const handleLogout = () => {
@@ -269,6 +308,66 @@ export default function ProfilePage() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Invites Sent (Block 76) */}
+        <div
+          className="bg-charcoal border border-white/10 rounded-xl p-4 mb-4"
+          data-ocid="profile.invites_sent.section"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-gold" />
+              <h2 className="text-sm font-semibold text-foreground">
+                Invites Sent
+              </h2>
+            </div>
+            {inviteRecords.length > 0 && (
+              <button
+                type="button"
+                data-ocid="profile.invites_sent.clear_button"
+                onClick={handleClearInvites}
+                className="text-xs text-muted-foreground hover:text-red-400 transition-colors active:scale-95"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          {inviteRecords.length === 0 ? (
+            <p
+              className="text-xs text-muted-foreground mt-2"
+              data-ocid="profile.invites_sent.empty_state"
+            >
+              No invites sent yet
+            </p>
+          ) : (
+            // tick dependency ensures relative timestamps refresh every 30 s
+            <div className="mt-2" aria-label={`invites-${tick}`}>
+              {inviteRecords
+                .slice()
+                .sort((a, b) => b.sentAt - a.sentAt)
+                .slice(0, 20)
+                .map((record, index) => (
+                  <div
+                    key={record.id}
+                    data-ocid={`profile.invites_sent.item.${index + 1}`}
+                    className="flex items-center justify-between py-2 border-b border-white/5 last:border-0"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-gold leading-tight">
+                        {record.toName}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {record.sport}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground shrink-0 ml-3">
+                      {formatTimeAgo(record.sentAt)}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
 
         {/* Profile Completion Gate (Block 57) */}
