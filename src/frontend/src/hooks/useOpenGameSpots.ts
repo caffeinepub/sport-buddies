@@ -1,5 +1,6 @@
 /**
  * Block 84 — Open Game Spots Badge
+ * Block 90 — Excludes archived, full, and locked sessions from the count.
  * Returns the total number of open player slots across active game sessions
  * for the given sport. Reacts to storage changes in real time.
  */
@@ -12,6 +13,8 @@ interface GameSession {
   sport: string;
   maxPlayers: number;
   participants: string[];
+  archived?: boolean;
+  startTime: string;
 }
 
 function computeOpenSpots(sport: string | null | undefined): number {
@@ -21,12 +24,20 @@ function computeOpenSpots(sport: string | null | undefined): number {
     if (!raw) return 0;
     const sessions: GameSession[] = JSON.parse(raw);
     if (!Array.isArray(sessions)) return 0;
-    return sessions
-      .filter((s) => s.sport.toLowerCase() === sport.toLowerCase())
-      .reduce((sum, s) => {
-        const open = Math.max(0, s.maxPlayers - s.participants.length);
-        return sum + open;
-      }, 0);
+    return (
+      sessions
+        .filter((s) => s.sport.toLowerCase() === sport.toLowerCase())
+        // Exclude archived sessions
+        .filter((s) => !s.archived)
+        // Exclude full sessions
+        .filter((s) => s.participants.length < s.maxPlayers)
+        // Exclude locked sessions (start time passed)
+        .filter((s) => new Date(s.startTime).getTime() > Date.now())
+        .reduce((sum, s) => {
+          const open = Math.max(0, s.maxPlayers - s.participants.length);
+          return sum + open;
+        }, 0)
+    );
   } catch {
     return 0;
   }

@@ -1,5 +1,6 @@
 /**
  * Block 85 — Upcoming Game Alerts
+ * Block 90 — Excludes archived and locked sessions from the count.
  * Returns the count of game sessions for the user's active sport
  * that the current user ("me") has NOT joined yet.
  * Reacts to storage changes in real time.
@@ -12,6 +13,8 @@ interface GameSession {
   id: string;
   sport: string;
   participants: string[];
+  archived?: boolean;
+  startTime: string;
 }
 
 function computeAvailableGames(sport: string | null | undefined): number {
@@ -24,7 +27,11 @@ function computeAvailableGames(sport: string | null | undefined): number {
     return sessions.filter(
       (s) =>
         s.sport.toLowerCase() === sport.toLowerCase() &&
-        !s.participants.includes("me"),
+        !s.participants.includes("me") &&
+        // Exclude archived sessions
+        !s.archived &&
+        // Exclude locked sessions (start time passed)
+        new Date(s.startTime).getTime() > Date.now(),
     ).length;
   } catch {
     return 0;

@@ -2,6 +2,7 @@ import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Activity,
+  Gamepad2,
   LogOut,
   Mail,
   MapPin,
@@ -15,6 +16,7 @@ import { LocationPermissionModal } from "../components/LocationPermissionModal";
 import ScreenBanner from "../components/ScreenBanner";
 import { useSport } from "../context/SportContext";
 import type { UserMode } from "../context/SportContext";
+import { useGameSessions } from "../hooks/useGameSessions";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useInviteRecords } from "../hooks/useInviteRecords";
 import { useLocationPermission } from "../hooks/useLocationPermission";
@@ -36,6 +38,14 @@ function formatTimeAgo(ts: number): string {
   if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? "" : "s"} ago`;
   const diffDay = Math.floor(diffHr / 24);
   return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`;
+}
+
+function formatGameDate(ts: number): string {
+  const diffMs = Date.now() - ts;
+  const diffDays = Math.floor(diffMs / 86_400_000);
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return `${diffDays} days ago`;
 }
 
 type StatusOption = "out_now" | "on_my_way" | "planned";
@@ -120,6 +130,13 @@ export default function ProfilePage() {
   } = useSport();
 
   const { inviteRecords, clearInvites } = useInviteRecords();
+  const { archivedSessions } = useGameSessions();
+
+  const pastGames = archivedSessions
+    .filter((s) => s.participants.includes("me"))
+    .sort(
+      (a, b) => (b.archivedAt ?? b.createdAt) - (a.archivedAt ?? a.createdAt),
+    );
 
   // Tick every 30 s so relative timestamps re-evaluate without a page reload.
   const [tick, setTick] = useState(0);
@@ -366,6 +383,54 @@ export default function ProfilePage() {
                     </p>
                   </div>
                 ))}
+            </div>
+          )}
+        </div>
+
+        {/* Past Games (Block 91) */}
+        <div
+          className="bg-charcoal border border-white/10 rounded-xl p-4 mb-4"
+          data-ocid="profile.past_games.section"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <Gamepad2 className="w-4 h-4 text-gold" />
+            <h2 className="text-sm font-semibold text-foreground">
+              Past Games
+            </h2>
+          </div>
+          {pastGames.length === 0 ? (
+            <p
+              className="text-xs text-muted-foreground mt-2"
+              data-ocid="profile.past_games.empty_state"
+            >
+              No past games yet
+            </p>
+          ) : (
+            <div className="mt-2">
+              {pastGames.slice(0, 20).map((game, index) => (
+                <div
+                  key={game.id}
+                  data-ocid={`profile.past_games.item.${index + 1}`}
+                  className="flex items-center justify-between py-2 border-b border-white/5 last:border-0"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gold leading-tight">
+                      {SPORT_LABELS[game.sport.toLowerCase()] ?? game.sport}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {game.locationLabel}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <p className="text-xs text-foreground font-medium">
+                      {game.participants.length} players
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatGameDate(game.archivedAt ?? game.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

@@ -1,6 +1,8 @@
 /**
  * Block 82 — Game / Session Creation
+ * Block 90 — Archive Locked Games
  * Manages game sessions: create, join, leave, and derive map markers.
+ * FULL or LOCKED games are automatically archived and hidden from active views.
  * Storage key: sb_game_sessions
  */
 import { useCallback, useEffect, useState } from "react";
@@ -16,6 +18,8 @@ export interface GameSession {
   hostName: string;
   participants: string[]; // array of participantIds ("me" = current user)
   createdAt: number;
+  archived?: boolean;
+  archivedAt?: number;
 }
 
 export interface GameMarker {
@@ -33,6 +37,16 @@ export interface GameMarker {
 }
 
 const STORAGE_KEY = "sb_game_sessions";
+
+/** Returns true when the game has reached max player capacity */
+export function isGameFull(s: GameSession): boolean {
+  return s.participants.length >= s.maxPlayers;
+}
+
+/** Returns true when the game start time has already passed */
+export function isGameLocked(s: GameSession): boolean {
+  return new Date(s.startTime).getTime() <= Date.now();
+}
 
 /** Derives a stable (0–100, 0–100) position from the session id */
 function deriveGamePosition(id: string): { posX: number; posY: number } {
@@ -70,6 +84,28 @@ function saveSessions(sessions: GameSession[]): void {
   } catch {
     // ignore write errors
   }
+}
+
+/**
+ * Scans all sessions; marks any FULL or LOCKED game as archived if not already.
+ * Writes to storage only when something changed. Returns the full updated list.
+ */
+function archiveStaleGames(): GameSession[] {
+  const current = loadSessions();
+  let changed = false;
+  const now = Date.now();
+  const updated = current.map((s) => {
+    if (s.archived) return s;
+    if (isGameFull(s) || isGameLocked(s)) {
+      changed = true;
+      return { ...s, archived: true, archivedAt: now };
+    }
+    return s;
+  });
+  if (changed) {
+    saveSessions(updated);
+  }
+  return updated;
 }
 
 /** Seed demo game sessions if storage is empty */
@@ -136,32 +172,45 @@ export function useGameSessions(sportFilter?: string) {
     return loadSessions();
   }, []);
 
-  const [sessions, setSessions] = useState<GameSession[]>(getSessions);
+  const [allSessions, setAllSessions] = useState<GameSession[]>(getSessions);
 
-  // Refresh from storage
+  // Refresh from storage — archive stale games first, then update state
   const refresh = useCallback(() => {
-    setSessions(getSessions());
-  }, [getSessions]);
+    const latest = archiveStaleGames();
+    setAllSessions(latest);
+  }, []);
 
   // Listen to storage events for cross-tab and same-tab sync
   useEffect(() => {
     const handler = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY) {
-        refresh();
+        // Re-load without re-archiving to avoid infinite loop from saveSessions dispatch
+        setAllSessions(loadSessions());
       }
     };
     window.addEventListener("storage", handler);
     return () => window.removeEventListener("storage", handler);
-  }, [refresh]);
+  }, []);
 
   // Initial load after seed
   useEffect(() => {
     refresh();
   }, [refresh]);
 
+  // Periodically check for newly locked/full games (every 30s)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refresh();
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [refresh]);
+
   const createSession = useCallback(
     (
-      data: Omit<GameSession, "id" | "createdAt" | "participants">,
+      data: Omit<
+        GameSession,
+        "id" | "createdAt" | "participants" | "archived" | "archivedAt"
+      >,
     ): GameSession => {
       const newSession: GameSession = {
         ...data,
@@ -200,13 +249,17 @@ export function useGameSessions(sportFilter?: string) {
   const getSession = useCallback(
     (id: string | null): GameSession | null => {
       if (!id) return null;
-      return sessions.find((s) => s.id === id) ?? null;
+      return allSessions.find((s) => s.id === id) ?? null;
     },
-    [sessions],
+    [allSessions],
   );
 
-  // Derive game markers, optionally filtered by sport
-  const gameMarkers: GameMarker[] = sessions
+  // Derived views — archived games stay in storage but are hidden from active lists
+  const activeSessions = allSessions.filter((s) => !s.archived);
+  const archivedSessions = allSessions.filter((s) => s.archived === true);
+
+  // Derive game markers from active sessions only, optionally filtered by sport
+  const gameMarkers: GameMarker[] = activeSessions
     .filter((s) => {
       if (!sportFilter || sportFilter === "all") return true;
       return s.sport.toLowerCase() === sportFilter.toLowerCase();
@@ -214,7 +267,8 @@ export function useGameSessions(sportFilter?: string) {
     .map(toGameMarker);
 
   return {
-    sessions,
+    sessions: activeSessions,
+    archivedSessions,
     gameMarkers,
     createSession,
     joinSession,
