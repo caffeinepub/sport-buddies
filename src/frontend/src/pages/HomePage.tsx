@@ -3,6 +3,8 @@ import { MapPin, ShieldAlert, ShoppingBag, Wind, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { PresenceBanner } from "../components/PresenceBanner";
 import ScreenBanner from "../components/ScreenBanner";
+import { SportTilesSection } from "../components/SportTilesSection";
+import { SportsTownDashboard } from "../components/SportsTownDashboard";
 import { useSport } from "../context/SportContext";
 import { usePresenceState } from "../hooks/usePresenceState";
 
@@ -65,6 +67,9 @@ export default function HomePage() {
             Find your crew. Play your sport.
           </p>
         </div>
+
+        {/* SPORTS TOWN DASHBOARD */}
+        <SportsTownDashboard />
 
         {/* PRIMARY CTA — ACTIVATE / DEACTIVATE */}
         <div className="w-full max-w-sm flex flex-col items-center gap-2">
@@ -163,6 +168,9 @@ export default function HomePage() {
             <ShieldAlert className="w-5 h-5 text-red-400 flex-shrink-0" />
           </button>
         </div>
+
+        {/* SPORTS TILE SECTION — Block 97 */}
+        <SportTilesSection />
       </div>
     </div>
   );

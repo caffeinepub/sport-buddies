@@ -5,6 +5,7 @@ import { AthleteProfileCard } from "../components/AthleteProfileCard";
 import { CreateGameModal } from "../components/CreateGameModal";
 import { GameDetailCard } from "../components/GameDetailCard";
 import { MapMarkerLayer } from "../components/MapMarkerLayer";
+import { QuickJoinPrompt } from "../components/QuickJoinPrompt";
 import ScreenBanner from "../components/ScreenBanner";
 import { SportChatPanel } from "../components/SportChatPanel";
 import { useSport } from "../context/SportContext";
@@ -119,6 +120,9 @@ export default function MapPage() {
   const [showCreateGame, setShowCreateGame] = useState(false);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
+  // Block 99 — modalSport tracks which sport to pre-fill in CreateGameModal
+  const [modalSport, setModalSport] = useState<string | null>(null);
+
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [myStatus, setMyStatus] = useState<string>(() => {
     try {
@@ -157,7 +161,8 @@ export default function MapPage() {
     useMapMarkers(selectedFilter);
 
   // Block 82 — Game Session Markers
-  const { gameMarkers } = useGameSessions(selectedFilter);
+  const { gameMarkers, sessions, joinSession } =
+    useGameSessions(selectedFilter);
 
   // Block 75 — Derive selected athlete for the profile card.
   // Falls back to liveRecords if the marker isn't on the canvas (e.g. tapped from Who's Out Now list).
@@ -197,6 +202,14 @@ export default function MapPage() {
 
   const isLive = myStatus === "out_now" || isPresenceActive;
   const isBuddyFinder = userMode === "buddy_finder";
+
+  // Block 99 — helper to open the modal pre-filled with the best available sport
+  const openCreateGame = (sport: string | null) => {
+    const resolved = sport || currentSport;
+    if (!resolved) return;
+    setModalSport(resolved);
+    setShowCreateGame(true);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-6">
@@ -290,7 +303,7 @@ export default function MapPage() {
           <button
             type="button"
             data-ocid="map.create_game.button"
-            onClick={() => setShowCreateGame(true)}
+            onClick={() => openCreateGame(currentSport)}
             className="w-full mb-4 flex items-center justify-center gap-2 bg-charcoal border border-white/10 text-foreground rounded-xl py-2.5 font-semibold text-sm active:scale-95 transition-transform hover:bg-white/5"
           >
             <Gamepad2 className="w-4 h-4 text-gold" />
@@ -396,6 +409,15 @@ export default function MapPage() {
         )}
         {/* ─── End Block 70 ─── */}
 
+        {/* ─── Block 100: QUICK JOIN PROMPT ─── */}
+        <QuickJoinPrompt
+          games={sessions}
+          currentSport={currentSport}
+          joinSession={joinSession}
+          onViewLobby={setSelectedGameId}
+        />
+        {/* ─── End Block 100 ─── */}
+
         {/* ─── Block 83: ACTIVE GAMES LIST ─── */}
         {locationEnabled && (gameMarkers.length > 0 || isPresenceActive) && (
           <div data-ocid="map.active_games.section" className="mb-5">
@@ -419,7 +441,21 @@ export default function MapPage() {
               >
                 <span className="text-xl block mb-1">🎮</span>
                 <p className="text-xs text-muted-foreground">
-                  No active games nearby.
+                  No active games —{" "}
+                  <button
+                    type="button"
+                    data-ocid="map.active_games.start_one.button"
+                    onClick={() => {
+                      const sport =
+                        selectedFilter !== "all"
+                          ? selectedFilter
+                          : currentSport;
+                      openCreateGame(sport ?? null);
+                    }}
+                    className="text-gold underline underline-offset-2 font-semibold hover:text-gold/80 transition-colors"
+                  >
+                    start one
+                  </button>
                 </p>
               </div>
             ) : (
@@ -593,12 +629,15 @@ export default function MapPage() {
         }
       />
 
-      {/* Block 82 — Create Game Modal */}
-      {currentSport && (
+      {/* Block 99 — Create Game Modal (pre-filled with modalSport) */}
+      {modalSport && (
         <CreateGameModal
           open={showCreateGame}
-          onClose={() => setShowCreateGame(false)}
-          defaultSport={currentSport}
+          onClose={() => {
+            setShowCreateGame(false);
+            setModalSport(null);
+          }}
+          defaultSport={modalSport}
         />
       )}
 

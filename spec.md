@@ -1,26 +1,32 @@
 # Sport Buddies
 
 ## Current State
-ProfilePage already contains the Block 91 "Past Games" section implemented in full:
-- Imports `useGameSessions` and destructures `archivedSessions`
-- Filters archived sessions to only those where `"me"` is in `participants`
-- Sorts by `archivedAt` (falling back to `createdAt`), newest first
-- Renders each row with: sport label (emoji + name), location, player count, relative date
-- Empty state: "No past games yet"
-- `data-ocid` markers on section, empty state, and each row item
-
-`useGameSessions` already exposes `archivedSessions` (games with `archived === true`).
+MapPage shows live athlete markers, Who's Out Now layer, Active Games list, sport chat panel, and Create Game shortcut. Games are stored in localStorage via `useGameSessions`. The Active Games list renders below Who's Out Now.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Nothing new required — implementation is already present.
+- `QuickJoinPrompt` component: a highlighted card shown at the top of the Map screen (above the Active Games list) when active games exist for the current sport
+- The card shows the most relevant game (soonest start time, or first available if times are equal)
+- Displays: sport emoji + name, location, formatted start time, player count (joined/max)
+- Prominent "Join Now" button that calls `joinSession` immediately and shows a success toast
+- Card only appears when there is at least one active (non-archived, non-full, non-locked) game for the current sport
+- Card is dismissible (X button) for the session — dismissed state stored in component state (not persisted)
 
 ### Modify
-- Nothing.
+- `MapPage.tsx`: render `<QuickJoinPrompt>` above the Active Games list section
 
 ### Remove
-- Nothing.
+- Nothing
 
 ## Implementation Plan
-- Validate and deploy the existing implementation as Block 91.
+1. Create `src/components/QuickJoinPrompt.tsx`
+   - Accept `games`, `currentSport`, `joinSession`, `onOpenLobby` as props
+   - Derive the most relevant game: filter active games for current sport, sort by start time ascending, pick first
+   - Display sport emoji, location, formatted start time, player count pill
+   - "Join Now" button: calls `joinSession(gameId)`, shows toast, dismisses card
+   - X dismiss button hides card for the session
+   - Only renders when a relevant game exists and not dismissed
+2. Update `MapPage.tsx`
+   - Import and render `<QuickJoinPrompt>` above the Active Games section
+   - Pass `activeGameSessions`, `currentSport`, `joinSession`, and `setSelectedGameId` (to open lobby)
