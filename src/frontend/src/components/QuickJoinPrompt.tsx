@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, MapPin, Users, X, Zap } from "lucide-react";
+import { Clock, DoorOpen, MapPin, Users, X, Zap } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { GameSession } from "../hooks/useGameSessions";
@@ -41,12 +41,17 @@ export function QuickJoinPrompt({
   if (!currentSport || dismissed || joined) return null;
 
   const now = Date.now();
+
+  // Block 101 — include games the user is already in so we can show "View Lobby"
   const eligible = games
     .filter((g) => {
       if (g.archived) return false;
       if (g.sport.toLowerCase() !== currentSport.toLowerCase()) return false;
-      if (g.participants.includes("me")) return false;
-      if (g.participants.length >= g.maxPlayers) return false;
+      if (
+        g.participants.length >= g.maxPlayers &&
+        !g.participants.includes("me")
+      )
+        return false;
       if (new Date(g.startTime).getTime() <= now) return false;
       return true;
     })
@@ -57,7 +62,12 @@ export function QuickJoinPrompt({
 
   if (eligible.length === 0) return null;
 
-  const game = eligible[0];
+  // Prefer a game the user hasn't joined yet; fall back to one they're already in
+  const game =
+    eligible.find((g) => !g.participants.includes("me")) ?? eligible[0];
+
+  const isAlreadyIn = game.participants.includes("me");
+
   const sportKey = game.sport.toLowerCase();
   const emoji = SPORT_EMOJI[sportKey] ?? SPORT_EMOJI.default ?? "🏅";
   const color = SPORT_COLOR[sportKey] ?? SPORT_COLOR.default ?? "#D4AF37";
@@ -67,7 +77,10 @@ export function QuickJoinPrompt({
     joinSession(game.id);
     setJoined(true);
     toast.success(`Joined! Game starts at ${formatStartTime(game.startTime)}`);
-    // Open the lobby so the user can see they're in
+    onViewLobby(game.id);
+  };
+
+  const handleViewLobby = () => {
     onViewLobby(game.id);
   };
 
@@ -101,12 +114,16 @@ export function QuickJoinPrompt({
       <div className="p-4 pr-8">
         {/* Header row: label */}
         <div className="flex items-center gap-1.5 mb-3">
-          <Zap className="w-3 h-3" style={{ color }} />
+          {isAlreadyIn ? (
+            <DoorOpen className="w-3 h-3" style={{ color }} />
+          ) : (
+            <Zap className="w-3 h-3" style={{ color }} />
+          )}
           <span
             className="text-[10px] font-bold uppercase tracking-widest"
             style={{ color }}
           >
-            Quick Join
+            {isAlreadyIn ? "You're In This Game" : "Quick Join"}
           </span>
         </div>
 
@@ -160,26 +177,43 @@ export function QuickJoinPrompt({
                 }}
               >
                 <Users className="w-2.5 h-2.5 mr-1" />
-                {game.participants.length}/{game.maxPlayers} · {openSpots} spot
-                {openSpots !== 1 ? "s" : ""} left
+                {isAlreadyIn
+                  ? `${game.participants.length}/${game.maxPlayers} players`
+                  : `${game.participants.length}/${game.maxPlayers} · ${openSpots} spot${openSpots !== 1 ? "s" : ""} left`}
               </Badge>
             </div>
           </div>
 
-          {/* Join button */}
-          <Button
-            data-ocid="quick_join.join_button"
-            onClick={handleJoin}
-            size="sm"
-            className="flex-shrink-0 font-bold text-xs px-4 h-9 rounded-xl shadow-lg transition-all active:scale-95"
-            style={{
-              backgroundColor: color,
-              color: "#000",
-              boxShadow: `0 4px 16px ${color}55`,
-            }}
-          >
-            Join Now
-          </Button>
+          {/* Action button — conditional on membership */}
+          {isAlreadyIn ? (
+            <Button
+              data-ocid="quick_join.view_lobby_button"
+              onClick={handleViewLobby}
+              size="sm"
+              className="flex-shrink-0 font-bold text-xs px-4 h-9 rounded-xl shadow-lg transition-all active:scale-95"
+              style={{
+                backgroundColor: color,
+                color: "#000",
+                boxShadow: `0 4px 16px ${color}55`,
+              }}
+            >
+              View Lobby
+            </Button>
+          ) : (
+            <Button
+              data-ocid="quick_join.join_button"
+              onClick={handleJoin}
+              size="sm"
+              className="flex-shrink-0 font-bold text-xs px-4 h-9 rounded-xl shadow-lg transition-all active:scale-95"
+              style={{
+                backgroundColor: color,
+                color: "#000",
+                boxShadow: `0 4px 16px ${color}55`,
+              }}
+            >
+              Join Now
+            </Button>
+          )}
         </div>
       </div>
     </div>
