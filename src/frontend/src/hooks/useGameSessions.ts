@@ -1,11 +1,13 @@
 /**
  * Block 82 — Game / Session Creation
  * Block 90 — Archive Locked Games
+ * Block 104 — Heat level added to GameMarker
  * Manages game sessions: create, join, leave, and derive map markers.
  * FULL or LOCKED games are automatically archived and hidden from active views.
  * Storage key: sb_game_sessions
  */
 import { useCallback, useEffect, useState } from "react";
+import { type HeatLevel, computeHeatLevel } from "../lib/gameHeat";
 import { SPORT_COLOR, SPORT_EMOJI } from "./useMapMarkers";
 
 export interface GameSession {
@@ -34,6 +36,7 @@ export interface GameMarker {
   maxPlayers: number;
   posX: number;
   posY: number;
+  heatLevel: HeatLevel;
 }
 
 const STORAGE_KEY = "sb_game_sessions";
@@ -159,6 +162,7 @@ function toGameMarker(session: GameSession): GameMarker {
     maxPlayers: session.maxPlayers,
     posX,
     posY,
+    heatLevel: computeHeatLevel(session),
   };
 }
 

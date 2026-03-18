@@ -1,32 +1,35 @@
 # Sport Buddies
 
 ## Current State
-MapPage shows live athlete markers, Who's Out Now layer, Active Games list, sport chat panel, and Create Game shortcut. Games are stored in localStorage via `useGameSessions`. The Active Games list renders below Who's Out Now.
+The Map screen displays game session markers as rounded square pins via `MapMarkerLayer.tsx`. Each marker shows a sport emoji and a player count badge. `useGameSessions.ts` derives `GameMarker` objects from active sessions with sport, location, start time, host, and participant data. There is currently no heat or urgency system.
 
 ## Requested Changes (Diff)
 
 ### Add
-- `QuickJoinPrompt` component: a highlighted card shown at the top of the Map screen (above the Active Games list) when active games exist for the current sport
-- The card shows the most relevant game (soonest start time, or first available if times are equal)
-- Displays: sport emoji + name, location, formatted start time, player count (joined/max)
-- Prominent "Join Now" button that calls `joinSession` immediately and shows a success toast
-- Card only appears when there is at least one active (non-archived, non-full, non-locked) game for the current sport
-- Card is dismissible (X button) for the session — dismissed state stored in component state (not persisted)
+- `src/frontend/src/lib/gameHeat.ts` — pure heat computation module
+  - `HeatLevel` type: `'low' | 'medium' | 'high'`
+  - `computeHeatLevel(session)` — derives heat from fill ratio and time until start
+  - HIGH: >= 70% full OR starts within 15 minutes
+  - MEDIUM: >= 35% full OR starts within 45 minutes
+  - LOW: everything else
+- `heatLevel` field added to `GameMarker` interface
+- Heat visual layer on `GameMarkerPin`:
+  - HIGH: orange/red animated glow ring + 🔥 badge label
+  - MEDIUM: amber static glow ring
+  - LOW: no change (existing behavior)
 
 ### Modify
-- `MapPage.tsx`: render `<QuickJoinPrompt>` above the Active Games list section
+- `useGameSessions.ts` — `toGameMarker()` calls `computeHeatLevel` and attaches `heatLevel` to the marker
+- `MapMarkerLayer.tsx` — `GameMarkerPin` renders heat-specific visual indicators
 
 ### Remove
-- Nothing
+- Nothing removed
 
 ## Implementation Plan
-1. Create `src/components/QuickJoinPrompt.tsx`
-   - Accept `games`, `currentSport`, `joinSession`, `onOpenLobby` as props
-   - Derive the most relevant game: filter active games for current sport, sort by start time ascending, pick first
-   - Display sport emoji, location, formatted start time, player count pill
-   - "Join Now" button: calls `joinSession(gameId)`, shows toast, dismisses card
-   - X dismiss button hides card for the session
-   - Only renders when a relevant game exists and not dismissed
-2. Update `MapPage.tsx`
-   - Import and render `<QuickJoinPrompt>` above the Active Games section
-   - Pass `activeGameSessions`, `currentSport`, `joinSession`, and `setSelectedGameId` (to open lobby)
+1. Create `gameHeat.ts` with `HeatLevel` type and `computeHeatLevel` function
+2. Add `heatLevel: HeatLevel` to `GameMarker` interface in `useGameSessions.ts`
+3. Update `toGameMarker()` to pass the session into `computeHeatLevel`
+4. In `MapMarkerLayer.tsx`, update `GameMarkerPin` to:
+   - HIGH: animated orange glow ring (animate-ping), 🔥 icon label below pin
+   - MEDIUM: static amber border glow
+   - LOW: existing styles unchanged

@@ -161,7 +161,7 @@ export default function MapPage() {
     useMapMarkers(selectedFilter);
 
   // Block 82 — Game Session Markers
-  const { gameMarkers, sessions, joinSession } =
+  const { gameMarkers, sessions, joinSession, leaveSession } =
     useGameSessions(selectedFilter);
 
   // Block 75 — Derive selected athlete for the profile card.
@@ -414,6 +414,7 @@ export default function MapPage() {
           games={sessions}
           currentSport={currentSport}
           joinSession={joinSession}
+          leaveSession={leaveSession}
           onViewLobby={setSelectedGameId}
         />
         {/* ─── End Block 100 ─── */}

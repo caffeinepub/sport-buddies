@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, DoorOpen, MapPin, Users, X, Zap } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { GameSession } from "../hooks/useGameSessions";
 import { SPORT_COLOR, SPORT_EMOJI } from "../hooks/useMapMarkers";
@@ -10,6 +10,7 @@ interface QuickJoinPromptProps {
   games: GameSession[];
   currentSport: string | null;
   joinSession: (id: string) => void;
+  leaveSession: (id: string) => void;
   onViewLobby: (id: string) => void;
 }
 
@@ -29,23 +30,48 @@ function formatStartTime(isoString: string): string {
     : `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${timeStr}`;
 }
 
+const REJOIN_WINDOW_MS = 5_000;
+
 export function QuickJoinPrompt({
   games,
   currentSport,
   joinSession,
+  leaveSession,
   onViewLobby,
 }: QuickJoinPromptProps) {
   const [dismissed, setDismissed] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [leftGameId, setLeftGameId] = useState<string | null>(null);
 
-  if (!currentSport || dismissed || joined) return null;
+  // Track the most recent "left game" for the rejoin window
+  const rejoinGameIdRef = useRef<string | null>(null);
+  const rejoinTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rejoinToastIdRef = useRef<string | number | null>(null);
+
+  // Clear the rejoin window (called on timeout, on joining another game, or on unmount)
+  const clearRejoinWindow = useCallback(() => {
+    rejoinGameIdRef.current = null;
+    if (rejoinTimerRef.current) {
+      clearTimeout(rejoinTimerRef.current);
+      rejoinTimerRef.current = null;
+    }
+    if (rejoinToastIdRef.current !== null) {
+      toast.dismiss(rejoinToastIdRef.current);
+      rejoinToastIdRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearRejoinWindow(), [clearRejoinWindow]);
+
+  if (!currentSport || dismissed) return null;
 
   const now = Date.now();
 
-  // Block 101 — include games the user is already in so we can show "View Lobby"
+  // Include games the user is already in so we can show "View Lobby" / "Leave Game"
   const eligible = games
     .filter((g) => {
       if (g.archived) return false;
+      if (g.id === leftGameId) return false; // hide a game the user just left
       if (g.sport.toLowerCase() !== currentSport.toLowerCase()) return false;
       if (
         g.participants.length >= g.maxPlayers &&
@@ -60,7 +86,39 @@ export function QuickJoinPrompt({
         new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
     );
 
-  if (eligible.length === 0) return null;
+  // After joining, check if the joined game is still eligible
+  if (joined) {
+    const joinedGame = eligible.find((g) => g.participants.includes("me"));
+    if (!joinedGame) return null;
+  }
+
+  if (eligible.length === 0) {
+    // Show the "no active games" empty state when user left and nothing remains
+    if (leftGameId) {
+      return (
+        <div
+          data-ocid="quick_join.empty_state"
+          className="mx-0 mb-4 rounded-2xl overflow-hidden px-4 py-3 text-center text-sm text-muted-foreground"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1.5px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          No active games —{" "}
+          <button
+            type="button"
+            data-ocid="quick_join.empty_start_one"
+            className="font-semibold underline underline-offset-2"
+            style={{ color: "#D4AF37" }}
+            onClick={() => setDismissed(true)}
+          >
+            start one
+          </button>
+        </div>
+      );
+    }
+    return null;
+  }
 
   // Prefer a game the user hasn't joined yet; fall back to one they're already in
   const game =
@@ -74,6 +132,8 @@ export function QuickJoinPrompt({
   const openSpots = game.maxPlayers - game.participants.length;
 
   const handleJoin = () => {
+    // If user joins a new game, cancel any pending rejoin window
+    clearRejoinWindow();
     joinSession(game.id);
     setJoined(true);
     toast.success(`Joined! Game starts at ${formatStartTime(game.startTime)}`);
@@ -82,6 +142,67 @@ export function QuickJoinPrompt({
 
   const handleViewLobby = () => {
     onViewLobby(game.id);
+  };
+
+  const handleLeave = () => {
+    const leavingGameId = game.id;
+
+    // Cancel any existing rejoin window (handles multiple-leave taps)
+    clearRejoinWindow();
+
+    // Remove user from the game immediately
+    leaveSession(leavingGameId);
+    setLeftGameId(leavingGameId);
+    setJoined(false);
+
+    // Track the most recent left game for potential rejoin
+    rejoinGameIdRef.current = leavingGameId;
+
+    // Show compact undo toast
+    const toastId = toast("Left game", {
+      duration: REJOIN_WINDOW_MS,
+      action: {
+        label: "Rejoin",
+        onClick: () => {
+          const targetId = rejoinGameIdRef.current;
+          if (!targetId) return;
+
+          // Graceful failure: check if game still exists and has room
+          const target = games.find((g) => g.id === targetId);
+          if (!target || target.archived) {
+            toast.error("That game is no longer available.");
+            clearRejoinWindow();
+            setLeftGameId(null);
+            return;
+          }
+          if (
+            target.participants.length >= target.maxPlayers &&
+            !target.participants.includes("me")
+          ) {
+            toast.error("Game is full — can't rejoin.");
+            clearRejoinWindow();
+            setLeftGameId(null);
+            return;
+          }
+
+          // Restore user to the game
+          joinSession(targetId);
+          clearRejoinWindow();
+          setLeftGameId(null);
+          setJoined(true);
+          toast.success("You're back in the game!");
+        },
+      },
+    });
+
+    rejoinToastIdRef.current = toastId;
+
+    // Auto-expire the rejoin window after 5 s
+    rejoinTimerRef.current = setTimeout(() => {
+      rejoinGameIdRef.current = null;
+      rejoinToastIdRef.current = null;
+      rejoinTimerRef.current = null;
+    }, REJOIN_WINDOW_MS);
   };
 
   return (
@@ -184,21 +305,31 @@ export function QuickJoinPrompt({
             </div>
           </div>
 
-          {/* Action button — conditional on membership */}
+          {/* Action buttons */}
           {isAlreadyIn ? (
-            <Button
-              data-ocid="quick_join.view_lobby_button"
-              onClick={handleViewLobby}
-              size="sm"
-              className="flex-shrink-0 font-bold text-xs px-4 h-9 rounded-xl shadow-lg transition-all active:scale-95"
-              style={{
-                backgroundColor: color,
-                color: "#000",
-                boxShadow: `0 4px 16px ${color}55`,
-              }}
-            >
-              View Lobby
-            </Button>
+            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+              <Button
+                data-ocid="quick_join.view_lobby_button"
+                onClick={handleViewLobby}
+                size="sm"
+                className="font-bold text-xs px-4 h-9 rounded-xl shadow-lg transition-all active:scale-95"
+                style={{
+                  backgroundColor: color,
+                  color: "#000",
+                  boxShadow: `0 4px 16px ${color}55`,
+                }}
+              >
+                View Lobby
+              </Button>
+              <button
+                type="button"
+                data-ocid="quick_join.leave_button"
+                onClick={handleLeave}
+                className="text-[11px] font-medium text-muted-foreground hover:text-destructive transition-colors underline underline-offset-2 px-1"
+              >
+                Leave Game
+              </button>
+            </div>
           ) : (
             <Button
               data-ocid="quick_join.join_button"

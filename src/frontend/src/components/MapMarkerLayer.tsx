@@ -8,6 +8,11 @@
  * Added support for rendering game session markers as rounded squares,
  * distinct from circular athlete markers. Game markers show sport emoji
  * and a participant count badge.
+ *
+ * Block 104 — Heat Level Visual Layer
+ * HIGH heat: animated orange/red pulse ring + 🔥 label below pin
+ * MEDIUM heat: static amber glow box-shadow on marker body
+ * LOW heat: no change
  */
 import { useState } from "react";
 import type { GameMarker } from "../hooks/useGameSessions";
@@ -273,6 +278,16 @@ function GameMarkerPin({
   const showTooltip = hovered || isSelected;
   const SIZE = 34;
 
+  const isHigh = marker.heatLevel === "high";
+  const isMedium = marker.heatLevel === "medium";
+
+  // Build box-shadow for the marker body
+  const baseGlow = isSelected
+    ? "0 0 16px #D4AF3766"
+    : `0 0 8px ${marker.markerColor}55`;
+  const heatGlow = isMedium ? ", 0 0 14px #f59e0b66" : "";
+  const markerBodyShadow = `${baseGlow}${heatGlow}`;
+
   return (
     <button
       type="button"
@@ -283,7 +298,7 @@ function GameMarkerPin({
         top: `${marker.posY}%`,
         transform: `translate(-50%, -50%) ${isSelected ? "scale(1.2)" : "scale(1)"}`,
         transition: "transform 0.15s ease",
-        zIndex: isSelected ? 25 : 8,
+        zIndex: isSelected ? 25 : isHigh ? 12 : 8,
         cursor: "pointer",
         outline: "none",
       }}
@@ -298,6 +313,20 @@ function GameMarkerPin({
     >
       {/* Tooltip */}
       {showTooltip && <GameTooltip marker={marker} />}
+
+      {/* HIGH heat: animated orange/red pulsing ring */}
+      {isHigh && !isSelected && (
+        <span
+          className="absolute animate-ping"
+          style={{
+            inset: -4,
+            borderRadius: 12,
+            backgroundColor: "#f97316",
+            opacity: 0.4,
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
       {/* Selected gold ring */}
       {isSelected && (
@@ -321,10 +350,10 @@ function GameMarkerPin({
           backgroundColor: "#1c1c22",
           border: isSelected
             ? "3px solid #D4AF37"
-            : `2px solid ${marker.markerColor}`,
-          boxShadow: isSelected
-            ? "0 0 16px #D4AF3766"
-            : `0 0 8px ${marker.markerColor}55`,
+            : isHigh
+              ? "2px solid #f97316"
+              : `2px solid ${marker.markerColor}`,
+          boxShadow: markerBodyShadow,
         }}
       >
         <span style={{ fontSize: 15, lineHeight: 1 }}>{marker.sportEmoji}</span>
@@ -340,7 +369,7 @@ function GameMarkerPin({
             paddingLeft: 3,
             paddingRight: 3,
             borderRadius: 8,
-            backgroundColor: "#D4AF37",
+            backgroundColor: isHigh ? "#f97316" : "#D4AF37",
             color: "#0B0B0D",
             fontSize: 9,
             lineHeight: 1,
@@ -351,6 +380,24 @@ function GameMarkerPin({
         </div>
       </div>
 
+      {/* HIGH heat: 🔥 label below the pin */}
+      {isHigh && (
+        <span
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            marginTop: 2,
+            fontSize: 11,
+            lineHeight: 1,
+            pointerEvents: "none",
+          }}
+        >
+          🔥
+        </span>
+      )}
+
       {/* Label below — only when selected */}
       {isSelected && (
         <span
@@ -359,7 +406,7 @@ function GameMarkerPin({
             top: "100%",
             left: "50%",
             transform: "translateX(-50%)",
-            marginTop: 4,
+            marginTop: isHigh ? 18 : 4,
             fontSize: 10,
             color: "#D4AF37",
             fontWeight: 600,
@@ -386,6 +433,7 @@ export function MapMarkerLayer({
 }: Props) {
   const legendEntries = getLegendEntries(markers);
   const hasGameMarkers = gameMarkers.length > 0;
+  const hasHighHeat = gameMarkers.some((gm) => gm.heatLevel === "high");
 
   return (
     <div data-ocid="map.marker_layer.panel" className="w-full">
@@ -501,6 +549,21 @@ export function MapMarkerLayer({
                 style={{ color: "rgba(255,255,255,0.6)" }}
               >
                 🎮 Games
+              </span>
+            </div>
+          )}
+          {/* Heat legend — only shown when at least one HIGH heat game is visible */}
+          {hasHighHeat && (
+            <div className="flex items-center gap-1.5">
+              <span
+                className="w-2 h-2 flex-shrink-0 rounded-full"
+                style={{ backgroundColor: "#f97316" }}
+              />
+              <span
+                className="text-xs"
+                style={{ color: "rgba(255,255,255,0.6)" }}
+              >
+                🔥 Hot
               </span>
             </div>
           )}
