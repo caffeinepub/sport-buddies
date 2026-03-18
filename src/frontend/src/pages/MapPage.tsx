@@ -164,6 +164,9 @@ export default function MapPage() {
   // Block 99 — modalSport tracks which sport to pre-fill in CreateGameModal
   const [modalSport, setModalSport] = useState<string | null>(null);
 
+  // Block 106 — Heat filter chip state
+  const [heatFilter, setHeatFilter] = useState<"ALL" | "HOT">("ALL");
+
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [myStatus, setMyStatus] = useState<string>(() => {
     try {
@@ -204,6 +207,12 @@ export default function MapPage() {
   // Block 82 — Game Session Markers
   const { gameMarkers, sessions, joinSession, leaveSession } =
     useGameSessions(selectedFilter);
+
+  // Block 106 — Filtered game markers for the Active Games list (display-only)
+  const filteredGameMarkers =
+    heatFilter === "HOT"
+      ? gameMarkers.filter((m) => m.heatLevel === "high")
+      : gameMarkers;
 
   // Block 75 — Derive selected athlete for the profile card.
   // Falls back to liveRecords if the marker isn't on the canvas (e.g. tapped from Who's Out Now list).
@@ -460,7 +469,7 @@ export default function MapPage() {
         />
         {/* ─── End Block 100 ─── */}
 
-        {/* ─── Block 83 + 105: ACTIVE GAMES LIST with Heat Indicators ─── */}
+        {/* ─── Block 83 + 105 + 106: ACTIVE GAMES LIST with Heat Indicators + Filter ─── */}
         {locationEnabled && (gameMarkers.length > 0 || isPresenceActive) && (
           <div data-ocid="map.active_games.section" className="mb-5">
             {/* Section header */}
@@ -476,33 +485,65 @@ export default function MapPage() {
               )}
             </div>
 
-            {gameMarkers.length === 0 ? (
-              <div
-                data-ocid="map.active_games.empty_state"
-                className="w-full bg-charcoal border border-white/8 rounded-xl p-4 text-center"
-              >
-                <span className="text-xl block mb-1">🎮</span>
-                <p className="text-xs text-muted-foreground">
-                  No active games —{" "}
-                  <button
-                    type="button"
-                    data-ocid="map.active_games.start_one.button"
-                    onClick={() => {
-                      const sport =
-                        selectedFilter !== "all"
-                          ? selectedFilter
-                          : currentSport;
-                      openCreateGame(sport ?? null);
-                    }}
-                    className="text-gold underline underline-offset-2 font-semibold hover:text-gold/80 transition-colors"
-                  >
-                    start one
-                  </button>
-                </p>
+            {/* Block 106 — Heat Filter Chip */}
+            {gameMarkers.length > 0 && (
+              <div className="flex items-center mb-3">
+                <button
+                  type="button"
+                  data-ocid="map.active_games.heat_filter.chip"
+                  onClick={() =>
+                    setHeatFilter((f) => (f === "ALL" ? "HOT" : "ALL"))
+                  }
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+                    heatFilter === "HOT"
+                      ? "bg-orange-500 border-orange-400 text-white shadow-[0_0_10px_2px_rgba(249,115,22,0.45)]"
+                      : "bg-transparent border-white/20 text-muted-foreground hover:border-orange-400/50 hover:text-orange-400"
+                  }`}
+                >
+                  🔥 Hot Only
+                </button>
               </div>
+            )}
+
+            {filteredGameMarkers.length === 0 ? (
+              heatFilter === "HOT" ? (
+                <div
+                  data-ocid="map.active_games.empty_state.hot_filter"
+                  className="w-full bg-charcoal border border-white/8 rounded-xl p-4 text-center"
+                >
+                  <span className="text-xl block mb-1">🔥</span>
+                  <p className="text-xs text-muted-foreground">
+                    No HOT games right now — check back soon.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  data-ocid="map.active_games.empty_state"
+                  className="w-full bg-charcoal border border-white/8 rounded-xl p-4 text-center"
+                >
+                  <span className="text-xl block mb-1">🎮</span>
+                  <p className="text-xs text-muted-foreground">
+                    No active games —{" "}
+                    <button
+                      type="button"
+                      data-ocid="map.active_games.start_one.button"
+                      onClick={() => {
+                        const sport =
+                          selectedFilter !== "all"
+                            ? selectedFilter
+                            : currentSport;
+                        openCreateGame(sport ?? null);
+                      }}
+                      className="text-gold underline underline-offset-2 font-semibold hover:text-gold/80 transition-colors"
+                    >
+                      start one
+                    </button>
+                  </p>
+                </div>
+              )
             ) : (
               <div className="space-y-2">
-                {gameMarkers.map((marker, idx) => (
+                {filteredGameMarkers.map((marker, idx) => (
                   <button
                     type="button"
                     key={marker.id}
@@ -574,7 +615,7 @@ export default function MapPage() {
             )}
           </div>
         )}
-        {/* ─── End Block 83 + 105 ─── */}
+        {/* ─── End Block 83 + 105 + 106 ─── */}
 
         {/* ─── Block 79: LIVE SPORT CHAT PANEL ─── */}
         {currentSport && (
