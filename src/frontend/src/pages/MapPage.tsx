@@ -12,6 +12,7 @@ import { useSport } from "../context/SportContext";
 import { useDemoChatSeed } from "../hooks/useDemoChatSeed";
 import { useDemoPresenceSeed } from "../hooks/useDemoPresenceSeed";
 import { useGameSessions } from "../hooks/useGameSessions";
+import type { GameMarker } from "../hooks/useGameSessions";
 import {
   SPORT_COLOR,
   SPORT_EMOJI,
@@ -94,6 +95,46 @@ function minutesRemaining(expiresAt: number): string {
   if (ms <= 0) return "expired";
   const mins = Math.ceil(ms / 60_000);
   return `${mins}m left`;
+}
+
+/**
+ * Block 105 — Heat indicator badge for Active Games list rows.
+ * Returns the JSX for the heat badge, or null for LOW heat (no change).
+ */
+function HeatBadge({ marker }: { marker: GameMarker }) {
+  if (marker.heatLevel === "high") {
+    return (
+      <span
+        data-ocid="active_games.heat_badge.high"
+        className="inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/40"
+      >
+        🔥 HOT
+      </span>
+    );
+  }
+  if (marker.heatLevel === "medium") {
+    return (
+      <span
+        data-ocid="active_games.heat_badge.medium"
+        className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+        Filling
+      </span>
+    );
+  }
+  return null; // LOW — no indicator
+}
+
+/** Returns row-level glow class based on heat level. */
+function heatRowClass(heatLevel: GameMarker["heatLevel"]): string {
+  if (heatLevel === "high") {
+    return "border-orange-500/40 shadow-[0_0_10px_2px_rgba(249,115,22,0.18)] bg-orange-950/20";
+  }
+  if (heatLevel === "medium") {
+    return "border-amber-500/25 bg-amber-950/10";
+  }
+  return "border-white/8 bg-charcoal";
 }
 
 export default function MapPage() {
@@ -419,7 +460,7 @@ export default function MapPage() {
         />
         {/* ─── End Block 100 ─── */}
 
-        {/* ─── Block 83: ACTIVE GAMES LIST ─── */}
+        {/* ─── Block 83 + 105: ACTIVE GAMES LIST with Heat Indicators ─── */}
         {locationEnabled && (gameMarkers.length > 0 || isPresenceActive) && (
           <div data-ocid="map.active_games.section" className="mb-5">
             {/* Section header */}
@@ -467,7 +508,9 @@ export default function MapPage() {
                     key={marker.id}
                     data-ocid={`map.active_games.item.${idx + 1}`}
                     onClick={() => setSelectedGameId(marker.id)}
-                    className="w-full bg-charcoal border border-white/8 rounded-xl p-3 flex items-center gap-3 text-left transition-all hover:bg-white/5 active:scale-[0.99] cursor-pointer"
+                    className={`w-full rounded-xl p-3 flex items-center gap-3 text-left transition-all border hover:opacity-90 active:scale-[0.99] cursor-pointer ${heatRowClass(
+                      marker.heatLevel,
+                    )}`}
                   >
                     {/* Sport emoji icon */}
                     <div
@@ -481,9 +524,13 @@ export default function MapPage() {
 
                     {/* Center column */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-foreground leading-tight">
-                        {marker.sport}
-                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-semibold text-sm text-foreground leading-tight">
+                          {marker.sport}
+                        </p>
+                        {/* Block 105 — Heat badge inline with sport name */}
+                        <HeatBadge marker={marker} />
+                      </div>
                       <p className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
                         📍 {marker.locationLabel}
                       </p>
@@ -527,7 +574,7 @@ export default function MapPage() {
             )}
           </div>
         )}
-        {/* ─── End Block 83 ─── */}
+        {/* ─── End Block 83 + 105 ─── */}
 
         {/* ─── Block 79: LIVE SPORT CHAT PANEL ─── */}
         {currentSport && (
