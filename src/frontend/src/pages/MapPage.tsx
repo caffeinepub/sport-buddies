@@ -715,6 +715,14 @@ export default function MapPage() {
                           +{Math.floor(Math.random() * 3) + 2} joining now
                         </p>
                       )}
+                      {marker.heatLevel === "high" && (
+                        <p
+                          data-ocid="active_games.spots_filling_fast"
+                          className="text-xs font-medium text-amber-400 leading-tight mt-0.5"
+                        >
+                          ⚡ Spots filling fast
+                        </p>
+                      )}
                     </div>
 
                     {/* Player count badge */}
