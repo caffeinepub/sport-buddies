@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Gamepad2, MapPin, RadarIcon, Users, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AthleteProfileCard } from "../components/AthleteProfileCard";
 import { CreateGameModal } from "../components/CreateGameModal";
 import { GameDetailCard } from "../components/GameDetailCard";
@@ -108,7 +108,13 @@ function HeatBadge({ marker }: { marker: GameMarker }) {
         data-ocid="active_games.heat_badge.high"
         className="inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/40"
       >
-        🔥 HOT
+        🔥 HOT{" "}
+        <span
+          data-ocid="active_games.heat_trend.high"
+          className="text-green-400 text-xs ml-0.5"
+        >
+          🔺
+        </span>
       </span>
     );
   }
@@ -119,11 +125,25 @@ function HeatBadge({ marker }: { marker: GameMarker }) {
         className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-        Filling
+        Filling{" "}
+        <span
+          data-ocid="active_games.heat_trend.medium"
+          className="text-muted-foreground text-xs"
+        >
+          ➖
+        </span>
       </span>
     );
   }
-  return null; // LOW — no indicator
+  // LOW — subtle trend indicator only
+  return (
+    <span
+      data-ocid="active_games.heat_badge.low"
+      className="inline-flex items-center gap-0.5 text-xs text-muted-foreground/60"
+    >
+      <span data-ocid="active_games.heat_trend.low">🔻</span>
+    </span>
+  );
 }
 
 /** Returns row-level glow class based on heat level. */
@@ -166,6 +186,24 @@ export default function MapPage() {
 
   // Block 106 — Heat filter chip state
   const [heatFilter, setHeatFilter] = useState<"ALL" | "HOT">("ALL");
+
+  // Block 107 — Heat legend tooltip state
+  const [showHeatLegend, setShowHeatLegend] = useState(false);
+  const heatLegendRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showHeatLegend) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        heatLegendRef.current &&
+        !heatLegendRef.current.contains(e.target as Node)
+      ) {
+        setShowHeatLegend(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showHeatLegend]);
 
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [myStatus, setMyStatus] = useState<string>(() => {
@@ -485,9 +523,12 @@ export default function MapPage() {
               )}
             </div>
 
-            {/* Block 106 — Heat Filter Chip */}
+            {/* Block 106 + 107 — Heat Filter Chip + Legend */}
             {gameMarkers.length > 0 && (
-              <div className="flex items-center mb-3">
+              <div
+                className="relative flex items-center gap-2 mb-3"
+                ref={heatLegendRef}
+              >
                 <button
                   type="button"
                   data-ocid="map.active_games.heat_filter.chip"
@@ -502,6 +543,78 @@ export default function MapPage() {
                 >
                   🔥 Hot Only
                 </button>
+
+                {/* Block 107 — Heat legend info button */}
+                <button
+                  type="button"
+                  data-ocid="map.active_games.heat_legend.toggle"
+                  onClick={() => setShowHeatLegend((v) => !v)}
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold border border-white/20 text-muted-foreground hover:border-orange-400/60 hover:text-orange-300 transition-colors flex-shrink-0"
+                  aria-label="What does heat mean?"
+                >
+                  ?
+                </button>
+
+                {/* Legend popover */}
+                {showHeatLegend && (
+                  <div
+                    data-ocid="map.active_games.heat_legend.panel"
+                    className="absolute z-50 top-full left-0 mt-2 w-64 rounded-xl border border-white/12 bg-zinc-900/95 backdrop-blur-md shadow-xl shadow-black/40 p-4"
+                  >
+                    <p className="text-xs font-bold text-foreground mb-3 uppercase tracking-widest">
+                      Heat Guide
+                    </p>
+                    <div className="space-y-2.5">
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-base leading-none mt-0.5">
+                          🔥
+                        </span>
+                        <div>
+                          <p className="text-xs font-bold text-orange-400">
+                            HOT
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Happening now · filling fast
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-base leading-none mt-0.5">
+                          🟠
+                        </span>
+                        <div>
+                          <p className="text-xs font-bold text-amber-400">
+                            MEDIUM
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Building · gaining players
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-base leading-none mt-0.5">
+                          ⚪
+                        </span>
+                        <div>
+                          <p className="text-xs font-bold text-muted-foreground">
+                            LOW
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Just started · open spots
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      data-ocid="map.active_games.heat_legend.got_it"
+                      onClick={() => setShowHeatLegend(false)}
+                      className="mt-4 w-full text-xs font-semibold py-1.5 rounded-lg bg-white/8 hover:bg-white/12 text-muted-foreground transition-colors"
+                    >
+                      Got it
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -594,6 +707,14 @@ export default function MapPage() {
                           },
                         )}
                       </p>
+                      {marker.heatLevel === "high" && (
+                        <p
+                          data-ocid="active_games.joining_now"
+                          className="text-xs text-orange-400/70 leading-tight mt-0.5"
+                        >
+                          +{Math.floor(Math.random() * 3) + 2} joining now
+                        </p>
+                      )}
                     </div>
 
                     {/* Player count badge */}
