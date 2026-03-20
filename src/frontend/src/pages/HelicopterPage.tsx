@@ -579,6 +579,7 @@ export default function HelicopterPage() {
   const [passengerCount, setPassengerCount] = useState("1");
   const [totalWeight, setTotalWeight] = useState("");
   const [notes, setNotes] = useState("");
+  const [safeConfirmed, setSafeConfirmed] = useState(false);
 
   // Cancel confirmation modal state
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
@@ -1269,9 +1270,7 @@ export default function HelicopterPage() {
           <CardHeader>
             <CardTitle>Reservation Details</CardTitle>
             <CardDescription>
-              {isSlotAvailable()
-                ? "Complete the form to reserve your flight"
-                : "Check availability first to enable booking"}
+              Complete the form to request your flight
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1283,7 +1282,6 @@ export default function HelicopterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
-                disabled={!isSlotAvailable()}
                 className="border-primary/30"
               />
             </div>
@@ -1296,7 +1294,6 @@ export default function HelicopterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="john@example.com"
-                disabled={!isSlotAvailable()}
                 className="border-primary/30"
               />
             </div>
@@ -1309,7 +1306,6 @@ export default function HelicopterPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+1 (555) 123-4567"
-                disabled={!isSlotAvailable()}
                 className="border-primary/30"
               />
             </div>
@@ -1324,7 +1320,6 @@ export default function HelicopterPage() {
                   max="2"
                   value={passengerCount}
                   onChange={(e) => setPassengerCount(e.target.value)}
-                  disabled={!isSlotAvailable()}
                   className="border-primary/30"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -1341,7 +1336,6 @@ export default function HelicopterPage() {
                   value={totalWeight}
                   onChange={(e) => setTotalWeight(e.target.value)}
                   placeholder="350"
-                  disabled={!isSlotAvailable()}
                   className="border-primary/30"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -1357,7 +1351,6 @@ export default function HelicopterPage() {
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Any special requests or information..."
-                disabled={!isSlotAvailable()}
                 className="border-primary/30 min-h-[100px]"
               />
             </div>
@@ -1409,6 +1402,39 @@ export default function HelicopterPage() {
                   "Reserve (Paid)"
                 )}
               </Button>
+            </div>
+            {/* Safe Mode: Request Booking */}
+            <div className="space-y-3 pt-4 border-t border-border">
+              {safeConfirmed ? (
+                <Alert className="border-green-500/50 bg-green-500/10">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <AlertTitle className="text-green-600 dark:text-green-400">
+                    Request Received
+                  </AlertTitle>
+                  <AlertDescription className="text-green-600/80 dark:text-green-400/80">
+                    We'll confirm your booking shortly.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Button
+                  onClick={() => {
+                    toast.success("Request received — we'll confirm shortly");
+                    setSafeConfirmed(true);
+                  }}
+                  disabled={
+                    !name.trim() ||
+                    !email.trim() ||
+                    !phone.trim() ||
+                    !date ||
+                    !time
+                  }
+                  variant="outline"
+                  className="w-full border-2 border-primary/50 text-foreground hover:bg-primary/10"
+                  data-ocid="helicopter.form.request_booking_button"
+                >
+                  Request Booking
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

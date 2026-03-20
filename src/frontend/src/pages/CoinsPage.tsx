@@ -1,5 +1,14 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Coins, Plane, QrCode, ScanLine, Users } from "lucide-react";
+import {
+  Coins,
+  History,
+  Plane,
+  QrCode,
+  ScanLine,
+  ShoppingCart,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import ScreenBanner from "../components/ScreenBanner";
 import { useCoinBalance } from "../hooks/useCoinBalance";
@@ -66,6 +75,18 @@ export default function CoinsPage() {
     toast.success("You earned 1 coin for inviting a friend! 🎉");
   };
 
+  const handleBuyCoins = () => {
+    toast.info("Coin purchase coming soon");
+  };
+
+  const handleEarnCoins = () => {
+    toast.info("Earn coins by joining games and activities");
+  };
+
+  const handleHistory = () => {
+    toast.info("No transactions yet");
+  };
+
   return (
     <div className="pb-8">
       <ScreenBanner screenName="CoinsScreen" routeName="Coins" />
@@ -89,6 +110,37 @@ export default function CoinsPage() {
               Sport Buddy Coins
             </p>
           </div>
+        </div>
+
+        {/* Quick Action Buttons */}
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          <button
+            type="button"
+            data-ocid="coins.buy_button"
+            onClick={handleBuyCoins}
+            className="bg-charcoal border border-white/10 rounded-xl p-3 flex flex-col items-center gap-1.5 text-xs font-medium text-muted-foreground hover:opacity-90 active:scale-95 transition-all"
+          >
+            <ShoppingCart className="w-5 h-5 text-gold" />
+            <span>Buy Coins</span>
+          </button>
+          <button
+            type="button"
+            data-ocid="coins.earn_button"
+            onClick={handleEarnCoins}
+            className="bg-charcoal border border-white/10 rounded-xl p-3 flex flex-col items-center gap-1.5 text-xs font-medium text-muted-foreground hover:opacity-90 active:scale-95 transition-all"
+          >
+            <Trophy className="w-5 h-5 text-green-400" />
+            <span>Earn Coins</span>
+          </button>
+          <button
+            type="button"
+            data-ocid="coins.history_button"
+            onClick={handleHistory}
+            className="bg-charcoal border border-white/10 rounded-xl p-3 flex flex-col items-center gap-1.5 text-xs font-medium text-muted-foreground hover:opacity-90 active:scale-95 transition-all"
+          >
+            <History className="w-5 h-5 text-muted-foreground" />
+            <span>History</span>
+          </button>
         </div>
 
         {/* Action Cards */}

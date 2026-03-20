@@ -31,9 +31,9 @@ export default function Header() {
       <button
         type="button"
         data-ocid="header.logo.link"
-        onClick={() => navigate({ to: "/" })}
+        onClick={() => navigate({ to: "/badge" })}
         className="flex items-center gap-2 focus:outline-none"
-        aria-label="Go to Home"
+        aria-label="View Security Badge"
       >
         <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center flex-shrink-0">
           <span className="text-gold font-black text-sm leading-none">SB</span>

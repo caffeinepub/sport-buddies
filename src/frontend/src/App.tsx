@@ -16,6 +16,7 @@ import { useGameSessions } from "./hooks/useGameSessions";
 import { useNewGameNotification } from "./hooks/useNewGameNotification";
 import ActivateSportScreen from "./pages/ActivateSportScreen";
 import AuthPage from "./pages/AuthPage";
+import BadgeScreen from "./pages/BadgeScreen";
 import CoinGrabPage from "./pages/CoinGrabPage";
 import CoinsPage from "./pages/CoinsPage";
 import CreateEventPage from "./pages/CreateEventPage";
@@ -303,6 +304,12 @@ const howItWorksRoute = createRoute({
   component: HowItWorksPage,
 });
 
+const badgeRoute = createRoute({
+  getParentRoute: () => layoutHeaderOnlyRoute,
+  path: "/badge",
+  component: BadgeScreen,
+});
+
 const routeTree = rootRoute.addChildren([
   layoutWithNavRoute.addChildren([
     homeRoute,
@@ -333,6 +340,7 @@ const routeTree = rootRoute.addChildren([
     createEventRoute,
     inviteRoute,
     howItWorksRoute,
+    badgeRoute,
   ]),
 ]);
 

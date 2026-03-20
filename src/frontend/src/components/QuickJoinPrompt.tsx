@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { GameSession } from "../hooks/useGameSessions";
 import { SPORT_COLOR, SPORT_EMOJI } from "../hooks/useMapMarkers";
+import { computeHeatLevel } from "../lib/gameHeat";
 
 interface QuickJoinPromptProps {
   games: GameSession[];
@@ -125,6 +126,7 @@ export function QuickJoinPrompt({
     eligible.find((g) => !g.participants.includes("me")) ?? eligible[0];
 
   const isAlreadyIn = game.participants.includes("me");
+  const heatLevel = computeHeatLevel(game);
 
   const sportKey = game.sport.toLowerCase();
   const emoji = SPORT_EMOJI[sportKey] ?? SPORT_EMOJI.default ?? "🏅";
@@ -303,6 +305,40 @@ export function QuickJoinPrompt({
                   : `${game.participants.length}/${game.maxPlayers} · ${openSpots} spot${openSpots !== 1 ? "s" : ""} left`}
               </Badge>
             </div>
+            {/* Block 111 — Heat urgency signals */}
+            {heatLevel === "high" && (
+              <div className="mt-1.5 flex flex-col gap-0.5">
+                <span
+                  className="text-[11px] font-medium"
+                  style={{ color: "#f97316" }}
+                >
+                  👥 Players joining now
+                </span>
+                <span
+                  className="text-[11px] font-medium"
+                  style={{ color: "#fb923c" }}
+                >
+                  ⚡ Spots filling fast
+                </span>
+              </div>
+            )}
+            {heatLevel === "medium" && (
+              <div className="mt-1.5">
+                <span
+                  className="text-[11px] font-medium"
+                  style={{ color: "#d97706" }}
+                >
+                  🟠 Building players
+                </span>
+              </div>
+            )}
+            {heatLevel === "low" && (
+              <div className="mt-1.5">
+                <span className="text-[11px] text-muted-foreground">
+                  ⚪ Open game
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Action buttons */}
