@@ -30,6 +30,7 @@ import HowItWorksPage from "./pages/HowItWorksPage";
 import InvitePage from "./pages/InvitePage";
 import MapPage from "./pages/MapPage";
 import MarketplacePage from "./pages/MarketplacePage";
+import MorePage from "./pages/MorePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import PresenceDetailPage from "./pages/PresenceDetailPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -182,6 +183,12 @@ const marketplaceRoute = createRoute({
   component: MarketplacePage,
 });
 
+const moreRoute = createRoute({
+  getParentRoute: () => layoutWithNavRoute,
+  path: "/more",
+  component: MorePage,
+});
+
 const profileRoute = createRoute({
   getParentRoute: () => layoutWithNavRoute,
   path: "/profile",
@@ -319,6 +326,7 @@ const routeTree = rootRoute.addChildren([
     coinsRoute,
     storeRoute,
     marketplaceRoute,
+    moreRoute,
     profileRoute,
     safetyRoute,
     presenceDetailRoute,

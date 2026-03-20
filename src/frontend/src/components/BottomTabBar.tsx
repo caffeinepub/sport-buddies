@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Calendar, Coins, Home, Map as MapIcon, User } from "lucide-react";
+import { Calendar, Coins, Grid2x2, Home, Map as MapIcon } from "lucide-react";
 import { useSport } from "../context/SportContext";
 import { useAvailableGames } from "../hooks/useAvailableGames";
 import { useOpenGameSpots } from "../hooks/useOpenGameSpots";
@@ -10,7 +10,7 @@ const TABS = [
   { path: "/map", icon: MapIcon, label: "Map", ocid: "nav.map.tab" },
   { path: "/events", icon: Calendar, label: "Events", ocid: "nav.events.tab" },
   { path: "/coins", icon: Coins, label: "Coins", ocid: "nav.coins.tab" },
-  { path: "/profile", icon: User, label: "Profile", ocid: "nav.profile.tab" },
+  { path: "/more", icon: Grid2x2, label: "Max", ocid: "nav.more.tab" },
 ];
 
 export default function BottomTabBar() {
@@ -30,7 +30,6 @@ export default function BottomTabBar() {
       }}
     >
       {TABS.map(({ path, icon: Icon, label, ocid }) => {
-        // Home tab is active only on exact '/', other tabs match prefix
         const isActive =
           path === "/"
             ? currentPath === "/"

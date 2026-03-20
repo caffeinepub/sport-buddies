@@ -1,8 +1,15 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { useSport } from "../context/SportContext";
+import { useGetUserProfile } from "../hooks/useQueries";
 
 export default function BadgeScreen() {
   const navigate = useNavigate();
+  const { data: profile } = useGetUserProfile();
+  const { currentSport } = useSport();
+
+  const displayName = profile?.name?.trim() || "Verified User";
+  const displaySport = currentSport || "Sport Not Set";
 
   return (
     <div
@@ -68,27 +75,30 @@ export default function BadgeScreen() {
         </span>
       </div>
 
+      {/* User name */}
+      <p
+        data-ocid="badge_screen.user_name"
+        className="text-lg font-bold text-white mt-2"
+      >
+        {displayName}
+      </p>
+
+      {/* Sport */}
+      <p
+        data-ocid="badge_screen.user_sport"
+        className="text-sm font-medium mt-1"
+        style={{ color: "rgba(212,175,55,0.75)" }}
+      >
+        {displaySport}
+      </p>
+
       {/* Subtext */}
       <p
         data-ocid="badge_screen.subtext"
-        className="text-sm text-muted-foreground text-center max-w-xs mt-1"
+        className="text-sm text-muted-foreground text-center max-w-xs mt-4"
       >
         This badge confirms your verified presence as a Sport Buddies member.
       </p>
-
-      {/* User label */}
-      <div
-        data-ocid="badge_screen.user_label"
-        className="mt-8 px-6 py-3 rounded-xl"
-        style={{
-          background: "rgba(212,175,55,0.08)",
-          border: "1px solid rgba(212,175,55,0.25)",
-        }}
-      >
-        <span className="text-gold font-semibold text-sm tracking-wider">
-          Verified User
-        </span>
-      </div>
 
       {/* Done button */}
       <button
