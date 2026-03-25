@@ -80,7 +80,7 @@ export default function CoinsPage() {
   };
 
   const handleEarnCoins = () => {
-    toast.info("Earn coins by joining games and activities");
+    toast.info("Earn coins by joining games and scanning items");
   };
 
   const handleHistory = () => {

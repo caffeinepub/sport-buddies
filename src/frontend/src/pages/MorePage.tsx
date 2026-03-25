@@ -15,8 +15,8 @@ const items = [
     icon: Coins,
     label: "Coins",
     color: "#D4AF37",
-    action: "message",
-    message: "Coins page",
+    action: "navigate",
+    path: "/coins",
   },
   {
     id: "helicopter",
@@ -56,10 +56,10 @@ export default function MorePage() {
   const navigate = useNavigate();
 
   function handleTap(item: (typeof items)[number]) {
-    if (item.action === "message") {
-      toast(item.message);
-    } else if (item.action === "navigate") {
+    if (item.action === "navigate") {
       navigate({ to: item.path });
+    } else {
+      toast((item as { message?: string }).message ?? "");
     }
   }
 

@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useSport } from "../context/SportContext";
 
@@ -82,27 +83,39 @@ const SPORT_TILES: SportTile[] = [
   },
 ];
 
+const SUPPORTED_MAP_SPORTS = new Set([
+  "soccer",
+  "basketball",
+  "tennis",
+  "running",
+  "swimming",
+  "cycling",
+  "yoga",
+]);
+
 export function SportTilesSection() {
   const { activateSport, sportStatus, locationEnabled, emergencyState } =
     useSport();
+  const navigate = useNavigate();
 
   const handleTileTap = (tile: SportTile) => {
-    // Try to activate through context if sport matches and conditions are met
-    if (
-      tile.contextSport &&
-      sportStatus !== "active" &&
-      locationEnabled &&
-      emergencyState !== "triggered"
-    ) {
-      try {
-        activateSport(tile.contextSport);
-        toast.success(`🎯 Activated ${tile.name} — finding games...`);
-        return;
-      } catch {
-        // fall through to info toast
+    const sportKey = (tile.contextSport ?? "").toLowerCase();
+    if (SUPPORTED_MAP_SPORTS.has(sportKey)) {
+      if (
+        sportStatus !== "active" &&
+        locationEnabled &&
+        emergencyState !== "triggered"
+      ) {
+        try {
+          activateSport(tile.contextSport!);
+        } catch {
+          // ignore
+        }
       }
+      navigate({ to: "/map" });
+    } else {
+      toast.info(`${tile.name} games coming soon`);
     }
-    toast.info(`Showing ${tile.name} games`);
   };
 
   return (
